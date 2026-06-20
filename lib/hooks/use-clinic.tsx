@@ -10,6 +10,7 @@ interface ClinicContextValue {
   profile: Profile | null;
   clinic: Clinic | null;
   membership: ClinicMember | null;
+  isSuperAdmin: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -19,6 +20,7 @@ const ClinicContext = createContext<ClinicContextValue>({
   profile: null,
   clinic: null,
   membership: null,
+  isSuperAdmin: false,
   loading: true,
   refresh: async () => {},
 });
@@ -48,7 +50,7 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
       .select("*")
       .eq("id", currentUser.id)
       .single();
-    setProfile(profileData);
+    setProfile(profileData as Profile | null);
 
     const { data: memberData } = await supabase
       .from("clinic_members")
@@ -71,14 +73,20 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refresh();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      refresh();
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => refresh());
     return () => subscription.unsubscribe();
   }, [refresh, supabase]);
 
   return (
-    <ClinicContext.Provider value={{ user, profile, clinic, membership, loading, refresh }}>
+    <ClinicContext.Provider value={{
+      user,
+      profile,
+      clinic,
+      membership,
+      isSuperAdmin: profile?.is_super_admin ?? false,
+      loading,
+      refresh,
+    }}>
       {children}
     </ClinicContext.Provider>
   );

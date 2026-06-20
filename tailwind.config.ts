@@ -9,15 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#f8fafc",
-        foreground: "#0f172a",
-        primary: "#0891b2",
-        "primary-foreground": "#ffffff",
-        panel: "#ffffff",
-        muted: "#f1f5f9",
-        danger: "#e11d48",
-        success: "#059669",
-        warning: "#d97706",
+        brand: {
+          cyan: "#06b6d4",
+          dark: "#0f172a",
+          gold: "#f59e0b",
+        },
+      },
+      animation: {
+        "fade-in": "fadeIn 0.3s ease-out",
+        "slide-up": "slideUp 0.3s ease-out",
+      },
+      keyframes: {
+        fadeIn: { from: { opacity: "0" }, to: { opacity: "1" } },
+        slideUp: { from: { opacity: "0", transform: "translateY(8px)" }, to: { opacity: "1", transform: "translateY(0)" } },
       },
     },
   },

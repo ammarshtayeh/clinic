@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PageHeader, Card, Badge } from "@/components/ui/card";
+import { PageHeader, Card } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
-import { INVOICE_STATUS_LABELS } from "@/lib/types/database";
+import { toast } from "@/lib/toast-store";
 import type { Invoice, InvoiceItem } from "@/lib/types/database";
+import { Printer } from "lucide-react";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,14 +35,11 @@ export default function InvoiceDetailPage() {
   const handlePayment = async () => {
     if (!invoice || !paymentAmount) return;
     const amount = parseFloat(paymentAmount);
-    await supabase.from("payments").insert({
-      invoice_id: invoice.id,
-      amount,
-      method: paymentMethod as "cash",
-    });
+    await supabase.from("payments").insert({ invoice_id: invoice.id, amount, method: paymentMethod as "cash" });
     const newPaid = invoice.paid_amount + amount;
     const status = newPaid >= invoice.total ? "paid" : "partial";
     await supabase.from("invoices").update({ paid_amount: newPaid, status }).eq("id", invoice.id);
+    toast.success("تم تسجيل الدفعة");
     setPaymentAmount("");
     load();
   };
@@ -51,39 +51,44 @@ export default function InvoiceDetailPage() {
       <PageHeader
         title={`فاتورة ${invoice.invoice_number}`}
         description={invoice.patient?.full_name}
-        action={<Badge color="#0a91b6">{INVOICE_STATUS_LABELS[invoice.status]}</Badge>}
+        action={
+          <div className="flex items-center gap-2">
+            <StatusBadge status={invoice.status} type="invoice" />
+            <Link href={`/invoices/${id}/print`} target="_blank">
+              <Button variant="gold" size="sm"><Printer size={14} className="ml-1 inline" />طباعة PDF</Button>
+            </Link>
+          </div>
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card title="تفاصيل الفاتورة" className="lg:col-span-2">
+        <Card title="البنود" className="lg:col-span-2">
           <div className="table-shell">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="px-4 py-3 text-right">الوصف</th>
-                  <th className="px-4 py-3 text-right">الكمية</th>
-                  <th className="px-4 py-3 text-right">السعر</th>
-                  <th className="px-4 py-3 text-right">المجموع</th>
-                </tr>
-              </thead>
+              <thead><tr className="border-b bg-slate-50">
+                <th className="px-4 py-3 text-right font-bold">الوصف</th>
+                <th className="px-4 py-3 text-right font-bold">الكمية</th>
+                <th className="px-4 py-3 text-right font-bold">السعر</th>
+                <th className="px-4 py-3 text-right font-bold">المجموع</th>
+              </tr></thead>
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-50">
                     <td className="px-4 py-3">{item.description}</td>
                     <td className="px-4 py-3">{item.quantity}</td>
                     <td className="px-4 py-3">{item.unit_price} ₪</td>
-                    <td className="px-4 py-3 font-medium">{item.total} ₪</td>
+                    <td className="px-4 py-3 font-bold">{item.total} ₪</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="mt-4 space-y-1 text-sm text-left" dir="ltr">
-            <p>Subtotal: {invoice.subtotal} ₪</p>
-            <p>Discount: {invoice.discount} ₪</p>
-            <p className="text-lg font-bold">Total: {invoice.total} ₪</p>
-            <p className="text-green-600">Paid: {invoice.paid_amount} ₪</p>
-            <p className="text-rose-600">Remaining: {invoice.total - invoice.paid_amount} ₪</p>
+          <div className="mt-4 space-y-1 rounded-2xl bg-slate-50 p-4 text-sm">
+            <div className="flex justify-between"><span>المجموع</span><span>{invoice.subtotal} ₪</span></div>
+            <div className="flex justify-between"><span>الخصم</span><span>{invoice.discount} ₪</span></div>
+            <div className="flex justify-between text-lg font-black"><span>الإجمالي</span><span>{invoice.total} ₪</span></div>
+            <div className="flex justify-between text-emerald-600"><span>المدفوع</span><span>{invoice.paid_amount} ₪</span></div>
+            <div className="flex justify-between text-rose-600 font-bold"><span>المتبقي</span><span>{invoice.total - invoice.paid_amount} ₪</span></div>
           </div>
         </Card>
 
@@ -91,18 +96,9 @@ export default function InvoiceDetailPage() {
           <Card title="تسجيل دفعة">
             <div className="space-y-4">
               <Input label="المبلغ (₪)" type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} dir="ltr" />
-              <Select
-                label="طريقة الدفع"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                options={[
-                  { value: "cash", label: "نقدي" },
-                  { value: "card", label: "بطاقة" },
-                  { value: "transfer", label: "تحويل" },
-                  { value: "insurance", label: "تأمين" },
-                ]}
-              />
-              <Button onClick={handlePayment} className="w-full">تسجيل الدفعة</Button>
+              <Select label="طريقة الدفع" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
+                options={[{ value: "cash", label: "نقدي" }, { value: "card", label: "بطاقة" }, { value: "transfer", label: "تحويل" }, { value: "insurance", label: "تأمين" }]} />
+              <Button onClick={handlePayment} className="w-full">تسجيل</Button>
             </div>
           </Card>
         )}

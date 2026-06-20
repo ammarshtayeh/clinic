@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useClinic } from "@/lib/hooks/use-clinic";
-import { PageHeader, Card, EmptyState, Badge } from "@/components/ui/card";
+import { PageHeader, Card, EmptyState } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
-import { INVOICE_STATUS_LABELS } from "@/lib/types/database";
+import { TableSkeleton } from "@/components/ui/dialog";
 import type { Invoice } from "@/lib/types/database";
 import { Plus } from "lucide-react";
 
@@ -18,61 +19,28 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     if (!clinic) return;
-    supabase
-      .from("invoices")
-      .select("*, patient:patients(full_name)")
-      .eq("clinic_id", clinic.id)
-      .order("created_at", { ascending: false })
-      .limit(50)
-      .then(({ data }) => {
-        setInvoices((data ?? []) as Invoice[]);
-        setLoading(false);
-      });
+    supabase.from("invoices").select("*, patient:patients(full_name)").eq("clinic_id", clinic.id)
+      .order("created_at", { ascending: false }).limit(50)
+      .then(({ data }) => { setInvoices((data ?? []) as Invoice[]); setLoading(false); });
   }, [clinic, supabase]);
 
   return (
     <div>
-      <PageHeader
-        title="الفواتير"
-        description="إدارة الفواتير والمدفوعات"
-        action={
-          <Link href="/invoices/new">
-            <Button><Plus size={16} className="ml-2 inline" />فاتورة جديدة</Button>
-          </Link>
-        }
-      />
-
+      <PageHeader title="الفواتير" action={<Link href="/invoices/new"><Button size="sm"><Plus size={16} className="ml-1 inline" />فاتورة</Button></Link>} />
       <Card>
-        {loading ? (
-          <div className="py-12 text-center text-slate-400">جاري التحميل...</div>
-        ) : invoices.length === 0 ? (
-          <EmptyState title="لا توجد فواتير" />
+        {loading ? <TableSkeleton /> : invoices.length === 0 ? (
+          <EmptyState title="لا فواتير" />
         ) : (
-          <div className="table-shell">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">رقم الفاتورة</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">المريض</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">المبلغ</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">المدفوع</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">الحالة</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-slate-50 hover:bg-slate-50/50">
-                    <td className="px-4 py-3">
-                      <Link href={`/invoices/${inv.id}`} className="font-medium text-cyan-600 hover:underline">{inv.invoice_number}</Link>
-                    </td>
-                    <td className="px-4 py-3">{inv.patient?.full_name}</td>
-                    <td className="px-4 py-3">{inv.total} ₪</td>
-                    <td className="px-4 py-3">{inv.paid_amount} ₪</td>
-                    <td className="px-4 py-3"><Badge>{INVOICE_STATUS_LABELS[inv.status]}</Badge></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-2">
+            {invoices.map((inv) => (
+              <Link key={inv.id} href={`/invoices/${inv.id}`} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4 transition hover:border-cyan-200 hover:shadow-sm">
+                <div>
+                  <p className="font-bold text-cyan-700">{inv.invoice_number}</p>
+                  <p className="text-sm text-slate-500">{inv.patient?.full_name} · {inv.total} ₪</p>
+                </div>
+                <StatusBadge status={inv.status} type="invoice" />
+              </Link>
+            ))}
           </div>
         )}
       </Card>

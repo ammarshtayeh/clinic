@@ -1,66 +1,31 @@
-import { Role } from "@/lib/types";
+import type { MemberRole } from "@/lib/types/database";
 
-export type AppAction =
-  | "appointments.create"
-  | "appointments.checkIn"
-  | "appointments.complete"
-  | "patients.create"
-  | "dental.write"
-  | "admin.users.manage"
-  | "admin.treatments.manage"
-  | "billing.manage"
-  | "admin.audit.view";
+export type Permission =
+  | "dashboard"
+  | "patients"
+  | "appointments"
+  | "calendar"
+  | "treatments"
+  | "procedures"
+  | "invoices"
+  | "dental_chart"
+  | "reports"
+  | "team"
+  | "settings"
+  | "admin";
 
-const routePolicy: Array<{ prefix: string; allowed: Role[] }> = [
-  { prefix: "/admin/roles", allowed: ["admin"] },
-  { prefix: "/admin/audit", allowed: ["admin"] },
-  { prefix: "/admin/treatments", allowed: ["admin"] },
-  { prefix: "/admin/users", allowed: ["admin"] },
-  { prefix: "/admin", allowed: ["admin"] },
-  {
-    prefix: "/billing",
-    allowed: ["admin", "receptionist", "accountant"],
-  },
-  {
-    prefix: "/reports",
-    allowed: ["admin", "branchManager", "accountant", "receptionist"],
-  },
-  { prefix: "/branches", allowed: ["admin"] },
-  { prefix: "/doctors", allowed: ["admin", "receptionist"] },
-  {
-    prefix: "/appointments",
-    allowed: ["admin", "doctor", "receptionist"],
-  },
-  {
-    prefix: "/patient-care",
-    allowed: ["admin", "doctor", "receptionist"],
-  },
-  {
-    prefix: "/dental-chart",
-    allowed: ["admin", "doctor"],
-  },
-];
-
-const actionPolicy: Record<AppAction, Role[]> = {
-  "appointments.create": ["admin", "receptionist", "doctor"],
-  "appointments.checkIn": ["admin", "receptionist"],
-  "appointments.complete": ["admin", "doctor", "receptionist"],
-  "patients.create": ["admin", "receptionist"],
-  "dental.write": ["admin", "doctor"],
-  "admin.users.manage": ["admin"],
-  "admin.treatments.manage": ["admin"],
-  "billing.manage": ["admin", "receptionist", "accountant"],
-  "admin.audit.view": ["admin"],
+const ROLE_PERMISSIONS: Record<MemberRole, Permission[]> = {
+  owner: ["dashboard", "patients", "appointments", "calendar", "treatments", "procedures", "invoices", "dental_chart", "reports", "team", "settings"],
+  doctor: ["dashboard", "patients", "appointments", "calendar", "treatments", "procedures", "dental_chart", "reports"],
+  receptionist: ["dashboard", "patients", "appointments", "calendar"],
+  accountant: ["dashboard", "patients", "invoices", "reports"],
 };
 
-export const canAccessRoute = (role: Role, path: string) => {
-  const matched = routePolicy.find((item) => path.startsWith(item.prefix));
-  if (!matched) {
-    return true;
-  }
-  return matched.allowed.includes(role);
-};
+export function canAccess(role: MemberRole | undefined, permission: Permission): boolean {
+  if (!role) return false;
+  return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
+}
 
-export const canDoAction = (role: Role, action: AppAction) => {
-  return actionPolicy[action].includes(role);
-};
+export function getPermissions(role: MemberRole): Permission[] {
+  return ROLE_PERMISSIONS[role] ?? [];
+}

@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Smile } from "lucide-react";
+import { BRAND, ALLOW_REGISTRATION } from "@/lib/brand";
+import { Sparkles, Shield, Zap } from "lucide-react";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -20,61 +21,82 @@ export function LoginForm() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
     if (authError) {
       setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
       setLoading(false);
       return;
     }
-
     router.push("/dashboard");
     router.refresh();
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-700 text-white shadow-lg">
-            <Smile size={32} />
+    <div className="auth-bg flex min-h-screen">
+      <div className="hidden flex-1 flex-col justify-between p-12 lg:flex">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 text-xl font-black text-white shadow-lg shadow-cyan-500/30">
+              A
+            </div>
+            <div>
+              <p className="text-2xl font-black text-slate-900">{BRAND.name}</p>
+              <p className="text-sm text-slate-500">{BRAND.domain}</p>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">نظام إدارة عيادات الأسنان</h1>
-          <p className="mt-2 text-sm text-slate-500">سجّل دخولك لإدارة عيادتك</p>
         </div>
+        <div className="space-y-8">
+          <h2 className="text-4xl font-black leading-tight text-slate-900">
+            إدارة عيادتك<br />
+            <span className="bg-gradient-to-l from-cyan-600 to-cyan-400 bg-clip-text text-transparent">باحترافية كاملة</span>
+          </h2>
+          <div className="space-y-4">
+            {[
+              { icon: Sparkles, text: "مرضى، مواعيد، فواتير — كل شيء في مكان واحد" },
+              { icon: Shield, text: "بياناتك معزولة ومحمية 100%" },
+              { icon: Zap, text: "سريع، سهل، يعمل على الجوال" },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center gap-3 text-slate-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
+                  <Icon size={18} className="text-cyan-600" />
+                </div>
+                <span className="font-medium">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs text-slate-400">© {new Date().getFullYear()} {BRAND.name} · {BRAND.domain}</p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="section-shell space-y-4">
-          {error && (
-            <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
-          )}
-          <Input
-            label="البريد الإلكتروني"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            dir="ltr"
-            placeholder="doctor@clinic.com"
-          />
-          <Input
-            label="كلمة المرور"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            dir="ltr"
-          />
-          <Button type="submit" loading={loading} className="w-full">
-            تسجيل الدخول
-          </Button>
-          <p className="text-center text-sm text-slate-500">
-            ليس لديك حساب؟{" "}
-            <Link href="/register" className="font-semibold text-cyan-600 hover:underline">
-              سجّل عيادتك الآن
-            </Link>
-          </p>
-        </form>
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="mb-8 lg:hidden text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 text-2xl font-black text-white">
+              A
+            </div>
+            <h1 className="text-2xl font-black text-slate-900">{BRAND.name}</h1>
+          </div>
+
+          <div className="premium-card">
+            <h2 className="mb-1 text-xl font-black text-slate-900">تسجيل الدخول</h2>
+            <p className="mb-6 text-sm text-slate-500">أدخل بيانات حساب عيادتك</p>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div>}
+              <Input label="البريد الإلكتروني" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required dir="ltr" placeholder="doctor@clinic.com" />
+              <Input label="كلمة المرور" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required dir="ltr" />
+              <div className="text-left">
+                <Link href="/forgot-password" className="text-sm font-semibold text-cyan-600 hover:underline">نسيت كلمة المرور؟</Link>
+              </div>
+              <Button type="submit" loading={loading} className="w-full" size="lg">دخول</Button>
+              {ALLOW_REGISTRATION && (
+                <p className="text-center text-sm text-slate-500">
+                  ليس لديك حساب؟ <Link href="/register" className="font-bold text-cyan-600">سجّل عيادتك</Link>
+                </p>
+              )}
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );

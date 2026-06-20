@@ -10,6 +10,7 @@ export interface Profile {
   full_name: string;
   phone: string | null;
   avatar_url: string | null;
+  is_super_admin: boolean;
   created_at: string;
 }
 
@@ -22,6 +23,7 @@ export interface Clinic {
   city: string | null;
   owner_id: string;
   is_active: boolean;
+  logo_url: string | null;
   created_at: string;
 }
 
@@ -138,20 +140,37 @@ export interface ToothRecord {
   recorded_at: string;
 }
 
+export interface AuditLog {
+  id: string;
+  clinic_id: string;
+  user_id: string | null;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
-      profiles: { Row: Profile; Insert: Partial<Profile>; Update: Partial<Profile> };
-      clinics: { Row: Clinic; Insert: Partial<Clinic>; Update: Partial<Clinic> };
-      clinic_members: { Row: ClinicMember; Insert: Partial<ClinicMember>; Update: Partial<ClinicMember> };
-      patients: { Row: Patient; Insert: Partial<Patient>; Update: Partial<Patient> };
-      appointments: { Row: Appointment; Insert: Partial<Appointment>; Update: Partial<Appointment> };
-      procedures: { Row: Procedure; Insert: Partial<Procedure>; Update: Partial<Procedure> };
-      treatments: { Row: Treatment; Insert: Partial<Treatment>; Update: Partial<Treatment> };
-      invoices: { Row: Invoice; Insert: Partial<Invoice>; Update: Partial<Invoice> };
-      invoice_items: { Row: InvoiceItem; Insert: Partial<InvoiceItem>; Update: Partial<InvoiceItem> };
-      payments: { Row: Payment; Insert: Partial<Payment>; Update: Partial<Payment> };
-      tooth_records: { Row: ToothRecord; Insert: Partial<ToothRecord>; Update: Partial<ToothRecord> };
+      profiles: { Row: Profile; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      clinics: { Row: Clinic; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      clinic_members: { Row: ClinicMember; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      patients: { Row: Patient; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      appointments: { Row: Appointment; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      procedures: { Row: Procedure; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      treatments: { Row: Treatment; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      invoices: { Row: Invoice; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      invoice_items: { Row: InvoiceItem; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      payments: { Row: Payment; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      tooth_records: { Row: ToothRecord; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      audit_logs: { Row: AuditLog; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+    };
+    Functions: {
+      generate_file_number: { Args: { p_clinic_id: string }; Returns: string };
+      generate_invoice_number: { Args: { p_clinic_id: string }; Returns: string };
+      seed_default_procedures: { Args: { p_clinic_id: string }; Returns: void };
     };
   };
 }

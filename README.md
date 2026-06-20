@@ -1,83 +1,55 @@
-# نظام إدارة عيادات الأسنان
+# Asnany — نظام إدارة عيادات الأسنان
 
-نظام SaaS متكامل لإدارة عيادات الأسنان — مبني بـ **Next.js 15** و **Supabase**.
+منصة SaaS احترافية مبنية على **Next.js 15 + Supabase**.
 
 ## الميزات
 
-- **تسجيل ودخول** بالإيميل وكلمة المرور (Supabase Auth)
-- **عيادة مستقلة** لكل طبيب — بيانات معزولة بـ Row Level Security
-- **إدارة المرضى** — ملفات، حساسية، ملاحظات طبية
-- **المواعيد** — جدولة، تأكيد، تتبع الحالة
-- **العلاجات والإجراءات** — كتالوج أسعار + سجل علاجات
-- **الفواتير والمدفوعات** — إصدار فواتير وتسجيل دفعات
-- **المخطط السني** — تسجيل حالة كل سن (نظام FDI)
-- **إدارة الفريق** — إضافة أطباء وموظفين بأدوار مختلفة
-- **واجهة عربية** — RTL كامل
+- 🔐 تسجيل دخول بالإيميل والباسورد — عزل كامل بين العيادات
+- 📊 لوحة تحكم متقدمة مع إحصائيات وإيرادات
+- 👥 إدارة المرضى + مخطط سني SVG تفاعلي
+- 📅 مواعيد + تقويم شهري
+- 💰 فواتير + طباعة PDF
+- 📈 تقارير شهرية
+- 👨‍⚕️ صلاحيات حسب الدور (مالك، طبيب، استقبال، محاسب)
+- 🔍 بحث سريع Ctrl+K
+- 📱 responsive — يعمل على الجوال
+- 🛡️ Super Admin — تفعيل/إيقاف العيادات
+- 🖼️ رفع شعار العيادة
 
-## البدء السريع
+## الإعداد
 
-### 1. إنشاء مشروع Supabase
+### 1. Supabase
+نفّذ بالترتيب في SQL Editor:
+1. `supabase/migrations/001_initial_schema.sql`
+2. `supabase/migrations/002_platform_upgrade.sql`
 
-1. أنشئ مشروعاً جديداً على [supabase.com](https://supabase.com)
-2. اذهب إلى **SQL Editor** ونفّذ محتوى الملف:
-   ```
-   supabase/migrations/001_initial_schema.sql
-   ```
-3. في **Authentication > Settings**، عطّل "Confirm email" للتطوير (أو اتركه مفعّلاً للإنتاج)
-
-### 2. إعداد المتغيرات
-
+### 2. متغيرات البيئة
 ```bash
 cp .env.example .env.local
 ```
 
-املأ القيم من Supabase Dashboard > Settings > API:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (لإضافة أعضاء الفريق)
+### 3. Super Admin
+```sql
+UPDATE profiles SET is_super_admin = true WHERE id = 'YOUR-USER-UUID';
+```
 
-### 3. تشغيل المشروع
-
+### 4. تشغيل
 ```bash
 npm install
 npm run dev
 ```
 
-افتح [http://localhost:3000](http://localhost:3000)
+## الإعدادات
 
-### 4. التسجيل
-
-1. اذهب إلى `/register`
-2. أدخل اسمك، اسم العيادة، الإيميل وكلمة المرور
-3. سيتم إنشاء حسابك وعيادتك تلقائياً
-
-## الأدوار
-
-| الدور | الصلاحيات |
-|-------|-----------|
-| مالك العيادة | كامل الصلاحيات + إدارة الفريق والإعدادات |
-| طبيب | المرضى، المواعيد، العلاجات، المخطط السني |
-| استقبال | المرضى والمواعيد |
-| محاسب | الفواتير والمدفوعات |
-
-## البنية
-
-```
-app/                    # صفحات Next.js App Router
-components/             # مكونات React
-lib/                    # Supabase clients, types, hooks
-supabase/migrations/    # SQL schema
-```
+| المتغير | الوصف |
+|---------|--------|
+| `NEXT_PUBLIC_ALLOW_REGISTRATION` | `false` للإنتاج (أنت تنشئ الحسابات) |
+| `SUPABASE_SERVICE_ROLE_KEY` | لإضافة أعضاء الفريق |
 
 ## النشر
 
 ```bash
-npm run build
-npm start
+npm run build && npm start
 ```
 
-أو انشر على [Vercel](https://vercel.com) مع إضافة متغيرات البيئة.
-
-## الترخيص
-
-خاص — للبيع لعيادات الأسنان.
+Domain: **asnany.ps**
