@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sidebar, MobileSidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { ClinicBlocked } from "@/components/layout/clinic-blocked";
+import { MockBanner } from "@/components/ui/mock-banner";
 import { useClinic } from "@/lib/hooks/use-clinic";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-x-hidden">
         <div className="mx-auto max-w-[1440px] p-4 md:p-6 lg:p-8">
           <Topbar onMenuClick={() => setMobileOpen(true)} />
+          <MockBanner />
           <div className="mt-6 animate-fade-in">{children}</div>
         </div>
       </main>

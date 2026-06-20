@@ -1,19 +1,68 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isMockMode, MOCK_SESSION_COOKIE } from "@/lib/mock/config";
+import { MOCK_CREDENTIALS } from "@/lib/mock/seed";
 
 const ALLOW_REGISTRATION = process.env.NEXT_PUBLIC_ALLOW_REGISTRATION === "true";
 
 function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
+  if (!url || !key || url.includes("placeholder") || url.includes("your-project")) {
     return null;
   }
   return { url, key };
 }
 
+function handleMockSession(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isAuthPage =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password");
+  const isPublic =
+    isAuthPage ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api");
+
+  if (!ALLOW_REGISTRATION && pathname.startsWith("/register")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  const sessionUserId = request.cookies.get(MOCK_SESSION_COOKIE)?.value;
+  const user = sessionUserId ? MOCK_CREDENTIALS.find((c) => c.userId === sessionUserId) : null;
+
+  if (!user && !isPublic && pathname !== "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && isAuthPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && pathname.startsWith("/admin") && user.userId !== "user-owner-001") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next({ request });
+}
+
 export async function updateSession(request: NextRequest) {
   try {
+    if (isMockMode()) {
+      return handleMockSession(request);
+    }
+
     const { pathname } = request.nextUrl;
 
     const isAuthPage =
@@ -35,13 +84,7 @@ export async function updateSession(request: NextRequest) {
 
     const env = getSupabaseEnv();
     if (!env) {
-      // Supabase not configured — allow public pages, skip auth enforcement
-      if (isPublic || pathname === "/") {
-        return NextResponse.next({ request });
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+      return handleMockSession(request);
     }
 
     let supabaseResponse = NextResponse.next({ request });

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BRAND, ALLOW_REGISTRATION } from "@/lib/brand";
+import { isMockMode } from "@/lib/mock/config";
 import { Sparkles, Shield, Zap } from "lucide-react";
 
 export function LoginForm() {
@@ -89,6 +90,13 @@ export function LoginForm() {
                 <Link href="/forgot-password" className="text-sm font-semibold text-cyan-600 hover:underline">نسيت كلمة المرور؟</Link>
               </div>
               <Button type="submit" loading={loading} className="w-full" size="lg">دخول</Button>
+          {isMockMode() ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+              <p className="mb-2 font-black">حسابات تجريبية:</p>
+              <p dir="ltr"><strong>مالك:</strong> ammar.shtayeh@gmail.com / ammarking123</p>
+              <p dir="ltr" className="mt-1"><strong>طبيب:</strong> ammar.ammar@gmail.com / ammarking123</p>
+            </div>
+          ) : null}
               {ALLOW_REGISTRATION && (
                 <p className="text-center text-sm text-slate-500">
                   ليس لديك حساب؟ <Link href="/register" className="font-bold text-cyan-600">سجّل عيادتك</Link>

@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { isMockMode } from "@/lib/mock/config";
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  if (isMockMode()) {
+    return NextResponse.json({ error: "Not available in mock mode" }, { status: 503 });
+  }
 
+  const supabase = await createClient();
+  if (!supabase) return NextResponse.json({ error: "Server error" }, { status: 500 });
+
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -28,6 +34,8 @@ export async function POST(request: Request) {
   }
 
   const admin = await createAdminClient();
+  if (!admin) return NextResponse.json({ error: "Server error" }, { status: 500 });
+
   const { data: newUser, error: createError } = await admin.auth.admin.createUser({
     email,
     password,

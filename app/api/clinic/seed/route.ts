@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isMockMode } from "@/lib/mock/config";
 
 export async function POST() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  if (isMockMode()) {
+    return NextResponse.json({ ok: true, message: "Mock mode — clinic already seeded" });
+  }
 
+  const supabase = await createClient();
+  if (!supabase) return NextResponse.json({ error: "Server error" }, { status: 500 });
+
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

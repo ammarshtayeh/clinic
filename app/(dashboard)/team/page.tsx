@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isUsingMockData } from "@/lib/supabase/client";
 import { useClinic } from "@/lib/hooks/use-clinic";
 import { PageHeader, Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/status-badge";
@@ -31,6 +31,10 @@ export default function TeamPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUsingMockData()) {
+      toast.info("إضافة أعضاء الفريق متاحة بعد ربط Supabase");
+      return;
+    }
     setLoading(true);
     const res = await fetch("/api/team/create", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
