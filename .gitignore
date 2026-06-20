@@ -1,0 +1,31 @@
+
+# Build/cache cleanup
+.next/
+node_modules/
+.m2/
+.npm-cache/
+.srs_extract/
+.srs_unzip/
+backup.sql
+seed-reset.sql
+seed-extra.sql
+Dental_Clinic_SRS.docx
+Dental_Clinic_SRS.txt
+
+# Environment secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.production.frontend
+
+# IDE / local
+.idea/
+.vscode/
+AppData/
+.docker/
+.docker-buildx/
+.docker-config/
+tsconfig.tsbuildinfo
+_cookies.txt
+
