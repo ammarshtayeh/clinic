@@ -7,10 +7,11 @@ const authListeners: AuthListener[] = [];
 
 function setSessionCookie(userId: string | null) {
   if (typeof document === "undefined") return;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
   if (userId) {
-    document.cookie = `${MOCK_SESSION_COOKIE}=${userId}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+    document.cookie = `${MOCK_SESSION_COOKIE}=${userId}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
   } else {
-    document.cookie = `${MOCK_SESSION_COOKIE}=; path=/; max-age=0`;
+    document.cookie = `${MOCK_SESSION_COOKIE}=; path=/; max-age=0; SameSite=Lax${secure}`;
   }
 }
 
@@ -46,6 +47,18 @@ export function createMockClient() {
       async signInWithPassword({ email, password }: { email: string; password: string }) {
         const cred = MOCK_CREDENTIALS.find((c) => c.email === email && c.password === password);
         if (!cred) return { data: { user: null, session: null }, error: { message: "Invalid credentials" } };
+
+        try {
+          const res = await fetch("/api/auth/mock-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          if (!res.ok) return { data: { user: null, session: null }, error: { message: "Invalid credentials" } };
+        } catch {
+          setSessionCookie(cred.userId);
+        }
+
         const db = loadDb();
         db.sessionUserId = cred.userId;
         saveDb(db);
@@ -54,6 +67,11 @@ export function createMockClient() {
         return { data: { user: mockUser(cred.userId), session: {} }, error: null };
       },
       async signOut() {
+        try {
+          await fetch("/api/auth/mock-session", { method: "DELETE" });
+        } catch {
+          /* ignore */
+        }
         const db = loadDb();
         db.sessionUserId = null;
         saveDb(db);

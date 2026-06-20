@@ -93,8 +93,9 @@ export function LoginForm() {
           {isMockMode() ? (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
               <p className="mb-2 font-black">حسابات تجريبية:</p>
-              <p dir="ltr"><strong>مالك:</strong> ammar.shtayeh@gmail.com / ammarking123</p>
+              <p dir="ltr"><strong>مالك (Admin):</strong> ammar.shtayeh@gmail.com / ammarking123</p>
               <p dir="ltr" className="mt-1"><strong>طبيب:</strong> ammar.ammar@gmail.com / ammarking123</p>
+              <p className="mt-2 text-amber-700">بعد الدخول كمالك → <span dir="ltr">/admin</span></p>
             </div>
           ) : null}
               {ALLOW_REGISTRATION && (
