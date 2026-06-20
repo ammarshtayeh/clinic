@@ -253,7 +253,7 @@ export function DentalChart({ records, onUpdate, treatments = [] }: DentalChartP
 
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         {/* Odontogram */}
-        <div className="relative overflow-x-auto overflow-y-visible rounded-3xl border border-slate-200/80 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 px-2 py-6 sm:p-6 shadow-2xl min-h-[480px]">
+        <div className="relative overflow-x-auto rounded-3xl border border-slate-800/80 bg-[#060d18] p-3 sm:p-5 shadow-2xl">
           <OdontogramCanvas
             records={records}
             selectedTooth={selectedTooth}
