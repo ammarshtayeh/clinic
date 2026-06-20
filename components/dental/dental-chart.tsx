@@ -7,11 +7,12 @@ import {
   Sparkles, Stethoscope, X,
 } from "lucide-react";
 import {
-  ALL_TEETH, CONDITIONS, LOWER_LEFT, LOWER_RIGHT, QUADRANT_LABELS,
-  SURFACE_LABELS, TOOTH_NAMES_AR, UPPER_LEFT, UPPER_RIGHT,
-  getArchRotation, getQuadrant, getToothType, isUpperJaw,
+  ALL_TEETH, CONDITIONS, QUADRANT_LABELS,
+  SURFACE_LABELS, TOOTH_NAMES_AR,
+  getQuadrant,
   parseSurfaces, serializeSurfaces, type SurfaceCode,
 } from "@/lib/dental/fdi";
+import { OdontogramCanvas } from "@/components/dental/odontogram-canvas";
 import {
   TOOTH_CONDITION_COLORS, TOOTH_CONDITION_LABELS,
   type ToothCondition, type ToothRecord,
@@ -48,202 +49,6 @@ interface DentalChartProps {
     cost: number;
     procedure?: { name_ar: string } | null;
   }>;
-}
-
-function getToothPaths(type: ReturnType<typeof getToothType>, upper: boolean) {
-  switch (type) {
-    case "incisor":
-      return {
-        crown: upper
-          ? "M12,38 Q12,10 20,6 Q28,10 28,38 Q26,42 20,44 Q14,42 12,38 Z"
-          : "M12,10 Q12,38 20,42 Q28,38 28,10 Q26,6 20,4 Q14,6 12,10 Z",
-        root: upper
-          ? "M17,38 L17,52 M23,38 L23,52"
-          : "M17,10 L17,-4 M23,10 L23,-4",
-        rootY: upper ? 52 : -4,
-      };
-    case "canine":
-      return {
-        crown: upper
-          ? "M14,38 Q14,12 20,4 Q26,12 26,38 Q24,42 20,44 Q16,42 14,38 Z"
-          : "M14,10 Q14,36 20,44 Q26,36 26,10 Q24,6 20,4 Q16,6 14,10 Z",
-        root: upper ? "M20,38 L20,54" : "M20,10 L20,-6",
-        rootY: upper ? 54 : -6,
-      };
-    case "premolar":
-      return {
-        crown: upper
-          ? "M10,38 Q10,14 16,10 Q20,8 24,10 Q30,14 30,38 Q28,42 20,44 Q12,42 10,38 Z"
-          : "M10,10 Q10,34 16,38 Q20,40 24,38 Q30,34 30,10 Q28,6 20,4 Q12,6 10,10 Z",
-        root: upper ? "M17,38 L16,50 M23,38 L24,50" : "M17,10 L16,-2 M23,10 L24,-2",
-        rootY: upper ? 50 : -2,
-      };
-    default:
-      return {
-        crown: upper
-          ? "M8,38 Q8,12 14,8 Q20,6 26,8 Q32,12 32,38 Q30,44 20,46 Q10,44 8,38 Z"
-          : "M8,10 Q8,36 14,40 Q20,42 26,40 Q32,36 32,10 Q30,4 20,2 Q10,4 8,10 Z",
-        root: upper
-          ? "M15,38 L14,50 M20,38 L20,52 M25,38 L26,50"
-          : "M15,10 L14,-2 M20,10 L20,-6 M25,10 L26,-2",
-        rootY: upper ? 52 : -6,
-      };
-  }
-}
-
-function ToothIcon({
-  number, condition, selected, activeCondition, onClick,
-}: {
-  number: number;
-  condition: ToothCondition;
-  selected: boolean;
-  activeCondition: ToothCondition | null;
-  onClick: () => void;
-}) {
-  const upper = isUpperJaw(number);
-  const type = getToothType(number);
-  const { crown, root } = getToothPaths(type, upper);
-  const color = TOOTH_CONDITION_COLORS[condition];
-  const rotation = getArchRotation(number);
-  const isMissing = condition === "missing";
-  const isImplant = condition === "implant";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={clsx(
-        "group relative flex flex-col items-center transition-all duration-200",
-        selected ? "z-10 scale-110" : "hover:scale-105",
-        activeCondition && !selected && "hover:ring-2 hover:ring-cyan-300/60 rounded-xl"
-      )}
-      title={`${number} — ${TOOTH_NAMES_AR[number] ?? "سن"} — ${TOOTH_CONDITION_LABELS[condition]}`}
-    >
-      <div
-        className={clsx(
-          "relative rounded-xl p-0.5",
-          selected && "bg-gradient-to-br from-cyan-400 to-cyan-600 shadow-lg shadow-cyan-500/30",
-          !selected && condition !== "healthy" && "ring-1 ring-offset-1 ring-[var(--tooth-ring)]",
-        )}
-        style={!selected && condition !== "healthy" ? { "--tooth-ring": `${color}88` } as React.CSSProperties : undefined}
-      >
-        <svg
-          width="44"
-          height="58"
-          viewBox="0 0 40 56"
-          className="drop-shadow-sm"
-          style={{ transform: `rotate(${rotation}deg)` }}
-        >
-          <defs>
-            <linearGradient id={`enamel-${number}`} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="100%" stopColor="#f1f5f9" />
-            </linearGradient>
-            <linearGradient id={`cond-${number}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor={`${color}cc`} />
-              <stop offset="100%" stopColor={`${color}66`} />
-            </linearGradient>
-          </defs>
-
-          {!isMissing && (
-            <>
-              <path d={root} fill="none" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
-              {condition === "root_canal" && (
-                <path d={root} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" opacity="0.9" />
-              )}
-              {isImplant && (
-                <>
-                  <rect x="18" y={upper ? 38 : 6} width="4" height={upper ? 14 : 14} rx="1" fill="#94a3b8" />
-                  {[0, 1, 2].map((i) => (
-                    <line
-                      key={i}
-                      x1="14" x2="26"
-                      y1={(upper ? 42 : 10) + i * 4}
-                      y2={(upper ? 42 : 10) + i * 4}
-                      stroke="#64748b" strokeWidth="1"
-                    />
-                  ))}
-                </>
-              )}
-            </>
-          )}
-
-          <path
-            d={crown}
-            fill={isMissing ? "none" : condition === "healthy" ? `url(#enamel-${number})` : `url(#cond-${number})`}
-            stroke={selected ? "#06b6d4" : isMissing ? "#94a3b8" : color}
-            strokeWidth={selected ? 2.5 : isMissing ? 1.5 : 1.8}
-            strokeDasharray={isMissing ? "4 3" : undefined}
-          />
-
-          {condition === "crown" && !isMissing && (
-            <path
-              d={upper ? "M10,22 Q20,16 30,22 L28,32 Q20,28 12,32 Z" : "M10,34 Q20,40 30,34 L28,24 Q20,28 12,24 Z"}
-              fill={`${color}88`} stroke={color} strokeWidth="1"
-            />
-          )}
-
-          {condition === "filling" && !isMissing && (
-            <ellipse cx="20" cy={upper ? 24 : 32} rx="5" ry="4" fill={color} opacity="0.75" />
-          )}
-
-          {condition === "cavity" && !isMissing && (
-            <circle cx="20" cy={upper ? 26 : 30} r="4" fill={color} opacity="0.85" />
-          )}
-
-          {isMissing && (
-            <>
-              <line x1="12" y1="28" x2="28" y2="28" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="28" y1="28" x2="12" y2="28" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round"
-                transform="rotate(90 20 28)" />
-            </>
-          )}
-        </svg>
-      </div>
-
-      <span className={clsx(
-        "mt-1 rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums",
-        selected ? "bg-cyan-600 text-white" : "bg-slate-100 text-slate-600 group-hover:bg-cyan-50 group-hover:text-cyan-700"
-      )}>
-        {number}
-      </span>
-    </button>
-  );
-}
-
-function ArchRow({
-  teeth, records, selectedTooth, activeCondition, onToothClick, mirror, filter,
-}: {
-  teeth: number[];
-  records: ToothRecord[];
-  selectedTooth: number | null;
-  activeCondition: ToothCondition | null;
-  onToothClick: (n: number) => void;
-  mirror?: boolean;
-  filter: ToothCondition | "all";
-}) {
-  const getCondition = (num: number) =>
-    records.find((r) => r.tooth_number === num)?.condition ?? "healthy";
-
-  return (
-    <div className={clsx("flex items-end justify-center gap-0.5 sm:gap-1", mirror && "flex-row-reverse")}>
-      {teeth.map((num) => {
-        const condition = getCondition(num);
-        const dimmed = filter !== "all" && condition !== filter;
-        return (
-          <div key={num} className={clsx("transition-opacity", dimmed && "opacity-20")}>
-            <ToothIcon
-              number={num}
-              condition={condition}
-              selected={selectedTooth === num}
-              activeCondition={activeCondition}
-              onClick={() => onToothClick(num)}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 function SurfacePicker({
@@ -448,62 +253,13 @@ export function DentalChart({ records, onUpdate, treatments = [] }: DentalChartP
 
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         {/* Odontogram */}
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-4 sm:p-8 shadow-2xl">
-          <div className="pointer-events-none absolute inset-0 opacity-30">
-            <svg className="h-full w-full" viewBox="0 0 800 400" preserveAspectRatio="none">
-              <ellipse cx="400" cy="115" rx="340" ry="70" fill="none" stroke="#06b6d4" strokeWidth="1" strokeDasharray="6 4" />
-              <ellipse cx="400" cy="285" rx="300" ry="60" fill="none" stroke="#06b6d4" strokeWidth="1" strokeDasharray="6 4" />
-              <line x1="400" y1="40" x2="400" y2="360" stroke="#ffffff" strokeWidth="1" strokeDasharray="4 6" opacity="0.2" />
-            </svg>
-          </div>
-
-          <p className="relative mb-4 text-center text-xs font-bold tracking-widest text-cyan-400/80">
-            الفك العلوي · MAXILLA
-          </p>
-
-          <div className="relative space-y-1">
-            <div className="mb-2 flex justify-between px-2 text-[10px] font-bold text-slate-500">
-              <span>{QUADRANT_LABELS[1].en}</span>
-              <span>{QUADRANT_LABELS[2].en}</span>
-            </div>
-            <div className="flex justify-center gap-4 sm:gap-8">
-              <ArchRow teeth={UPPER_RIGHT} records={records} filter={filter}
-                selectedTooth={selectedTooth} activeCondition={activeCondition}
-                onToothClick={handleToothClick} />
-              <div className="hidden w-px bg-gradient-to-b from-transparent via-cyan-500/40 to-transparent sm:block" />
-              <ArchRow teeth={UPPER_LEFT} records={records} filter={filter}
-                selectedTooth={selectedTooth} activeCondition={activeCondition}
-                onToothClick={handleToothClick} mirror />
-            </div>
-          </div>
-
-          <div className="my-6 flex items-center gap-3 px-4">
-            <div className="h-px flex-1 bg-gradient-to-l from-transparent via-cyan-500/50 to-transparent" />
-            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-black text-cyan-300">
-              خط المنتصف · MIDLINE
-            </span>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-          </div>
-
-          <div className="relative space-y-1">
-            <div className="flex justify-center gap-4 sm:gap-8">
-              <ArchRow teeth={LOWER_RIGHT} records={records} filter={filter}
-                selectedTooth={selectedTooth} activeCondition={activeCondition}
-                onToothClick={handleToothClick} />
-              <div className="hidden w-px bg-gradient-to-b from-transparent via-cyan-500/40 to-transparent sm:block" />
-              <ArchRow teeth={LOWER_LEFT} records={records} filter={filter}
-                selectedTooth={selectedTooth} activeCondition={activeCondition}
-                onToothClick={handleToothClick} mirror />
-            </div>
-            <div className="mt-2 flex justify-between px-2 text-[10px] font-bold text-slate-500">
-              <span>{QUADRANT_LABELS[4].en}</span>
-              <span>{QUADRANT_LABELS[3].en}</span>
-            </div>
-          </div>
-
-          <p className="relative mt-4 text-center text-xs font-bold tracking-widest text-cyan-400/80">
-            الفك السفلي · MANDIBLE
-          </p>
+        <div className="relative overflow-x-auto overflow-y-visible rounded-3xl border border-slate-200/80 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 px-2 py-6 sm:p-6 shadow-2xl min-h-[480px]">
+          <OdontogramCanvas
+            records={records}
+            selectedTooth={selectedTooth}
+            filter={filter}
+            onToothClick={handleToothClick}
+          />
 
           {saving && (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px]">
