@@ -1,13 +1,13 @@
 "use client";
 
 import {
-  getToothType, isUpperJaw, QUADRANT_LABELS,
+  getToothType, QUADRANT_LABELS,
   UPPER_RIGHT, UPPER_LEFT, LOWER_RIGHT, LOWER_LEFT,
 } from "@/lib/dental/fdi";
 import {
   ARCH_PATHS, getToothPosition, ODONTOGRAM_VIEWBOX,
 } from "@/lib/dental/arch-positions";
-import { getToothShape } from "@/lib/dental/tooth-shapes";
+import { getToothCapsule } from "@/lib/dental/tooth-shapes";
 import { ToothSVG } from "@/components/dental/tooth-svg";
 import type { ToothCondition, ToothRecord } from "@/lib/types/database";
 
@@ -30,14 +30,14 @@ function renderQuadrant(
 
   return teeth.map((num) => {
     const pos = getToothPosition(num);
-    const shape = getToothShape(num, getToothType(num), isUpperJaw(num));
+    const cap = getToothCapsule(num, getToothType(num));
     const condition = getCondition(num);
     const dimmed = filter !== "all" && condition !== filter;
 
     return (
       <g
         key={num}
-        transform={`translate(${pos.x - shape.width / 2}, ${pos.y - shape.height / 2}) rotate(${pos.rotate}, ${shape.width / 2}, ${shape.height / 2})`}
+        transform={`translate(${pos.x - cap.width / 2}, ${pos.y - cap.height / 2}) rotate(${pos.rotate}, ${cap.width / 2}, ${cap.height / 2})`}
       >
         <ToothSVG
           number={num}
@@ -55,46 +55,38 @@ export function OdontogramCanvas({ records, selectedTooth, filter, onToothClick 
   return (
     <svg
       viewBox={ODONTOGRAM_VIEWBOX}
-      className="mx-auto w-full max-w-[900px]"
-      style={{ minHeight: 420 }}
+      className="mx-auto w-full max-w-[920px]"
+      style={{ minHeight: 440 }}
       role="img"
       aria-label="مخطط الأسنان FDI"
     >
-      <defs>
-        <radialGradient id="arch-bg" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#1e293b" />
-          <stop offset="100%" stopColor="#0f172a" />
-        </radialGradient>
-      </defs>
-
-      {/* Arch guide curves */}
-      <path d={ARCH_PATHS.upper} fill="none" stroke="#06b6d4" strokeWidth="1" strokeDasharray="5 4" opacity="0.25" />
-      <path d={ARCH_PATHS.lower} fill="none" stroke="#06b6d4" strokeWidth="1" strokeDasharray="5 4" opacity="0.25" />
+      {/* Arch guides */}
+      <path d={ARCH_PATHS.upper} fill="none" stroke="#06b6d4" strokeWidth="1" strokeDasharray="6 4" opacity="0.22" />
+      <path d={ARCH_PATHS.lower} fill="none" stroke="#06b6d4" strokeWidth="1" strokeDasharray="6 4" opacity="0.22" />
 
       {/* Midline */}
-      <line x1="450" y1="60" x2="450" y2="460" stroke="#ffffff" strokeWidth="1" strokeDasharray="4 5" opacity="0.12" />
+      <line x1="450" y1="72" x2="450" y2="428" stroke="#ffffff" strokeWidth="1" strokeDasharray="4 5" opacity="0.1" />
 
       {/* Jaw labels */}
-      <text x="450" y="42" textAnchor="middle" fill="#67e8f9" fontSize="11" fontWeight="700" opacity="0.7" letterSpacing="2">
+      <text x="450" y="58" textAnchor="middle" fill="#67e8f9" fontSize="10" fontWeight="700" opacity="0.65" letterSpacing="1.5">
         MAXILLA · الفك العلوي
       </text>
-      <text x="450" y="498" textAnchor="middle" fill="#67e8f9" fontSize="11" fontWeight="700" opacity="0.7" letterSpacing="2">
+      <text x="450" y="478" textAnchor="middle" fill="#67e8f9" fontSize="10" fontWeight="700" opacity="0.65" letterSpacing="1.5">
         MANDIBLE · الفك السفلي
       </text>
 
       {/* Quadrant labels */}
-      <text x="130" y="130" fill="#64748b" fontSize="9" fontWeight="700">{QUADRANT_LABELS[1].en}</text>
-      <text x="770" y="130" textAnchor="end" fill="#64748b" fontSize="9" fontWeight="700">{QUADRANT_LABELS[2].en}</text>
-      <text x="130" y="410" fill="#64748b" fontSize="9" fontWeight="700">{QUADRANT_LABELS[4].en}</text>
-      <text x="770" y="410" textAnchor="end" fill="#64748b" fontSize="9" fontWeight="700">{QUADRANT_LABELS[3].en}</text>
+      <text x="118" y="128" fill="#475569" fontSize="8.5" fontWeight="700">{QUADRANT_LABELS[1].en}</text>
+      <text x="782" y="128" textAnchor="end" fill="#475569" fontSize="8.5" fontWeight="700">{QUADRANT_LABELS[2].en}</text>
+      <text x="118" y="378" fill="#475569" fontSize="8.5" fontWeight="700">{QUADRANT_LABELS[4].en}</text>
+      <text x="782" y="378" textAnchor="end" fill="#475569" fontSize="8.5" fontWeight="700">{QUADRANT_LABELS[3].en}</text>
 
       {/* Midline badge */}
-      <rect x="408" y="248" width="84" height="18" rx="9" fill="rgba(6,182,212,0.12)" stroke="rgba(6,182,212,0.3)" strokeWidth="0.5" />
-      <text x="450" y="260" textAnchor="middle" fill="#a5f3fc" fontSize="7.5" fontWeight="800">
+      <rect x="404" y="238" width="92" height="17" rx="8.5" fill="rgba(6,182,212,0.1)" stroke="rgba(6,182,212,0.28)" strokeWidth="0.5" />
+      <text x="450" y="250" textAnchor="middle" fill="#a5f3fc" fontSize="7" fontWeight="800">
         MIDLINE · خط المنتصف
       </text>
 
-      {/* All teeth */}
       {renderQuadrant(UPPER_RIGHT, records, selectedTooth, filter, onToothClick)}
       {renderQuadrant(UPPER_LEFT, records, selectedTooth, filter, onToothClick)}
       {renderQuadrant(LOWER_RIGHT, records, selectedTooth, filter, onToothClick)}
