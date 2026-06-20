@@ -1,7 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isMockMode, MOCK_SESSION_COOKIE } from "@/lib/mock/config";
-import { MOCK_CREDENTIALS } from "@/lib/mock/seed";
+import {
+  isMockMode, MOCK_SESSION_COOKIE, ADMIN_SESSION_COOKIE,
+} from "@/lib/mock/config";
+import { MOCK_CREDENTIALS, OWNER_ID } from "@/lib/mock/seed";
+import {
+  isAdminProtected, isClinicProtected, isPublicPath,
+} from "@/lib/auth/portals";
 
 const ALLOW_REGISTRATION = process.env.NEXT_PUBLIC_ALLOW_REGISTRATION === "true";
 
@@ -16,42 +21,45 @@ function getSupabaseEnv() {
 
 function handleMockSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isAuthPage =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/register") ||
-    pathname.startsWith("/forgot-password") ||
-    pathname.startsWith("/reset-password");
-  const isPublic =
-    isAuthPage ||
-    pathname.startsWith("/auth") ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api");
+  const clinicUserId = request.cookies.get(MOCK_SESSION_COOKIE)?.value;
+  const adminUserId = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  const hasClinicSession = !!clinicUserId && MOCK_CREDENTIALS.some((c) => c.userId === clinicUserId);
+  const hasAdminSession = adminUserId === OWNER_ID;
 
   if (!ALLOW_REGISTRATION && pathname.startsWith("/register")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const sessionUserId = request.cookies.get(MOCK_SESSION_COOKIE)?.value;
-  const user = sessionUserId ? MOCK_CREDENTIALS.find((c) => c.userId === sessionUserId) : null;
-
-  if (!user && !isPublic && pathname !== "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  if (pathname === "/admin/login") {
+    if (hasAdminSession) return NextResponse.redirect(new URL("/admin", request.url));
+    return NextResponse.next({ request });
   }
 
-  if (user && isAuthPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+  if (pathname === "/login") {
+    if (hasClinicSession) return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.next({ request });
   }
 
-  if (user && pathname.startsWith("/admin") && user.userId !== "user-owner-001") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+  if (isAdminProtected(pathname)) {
+    if (!hasAdminSession) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+    return NextResponse.next({ request });
+  }
+
+  if (isClinicProtected(pathname)) {
+    if (!hasClinicSession) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return NextResponse.next({ request });
+  }
+
+  if (pathname === "/" || isPublicPath(pathname)) {
+    return NextResponse.next({ request });
+  }
+
+  if (!hasClinicSession && !hasAdminSession) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next({ request });
@@ -64,22 +72,20 @@ export async function updateSession(request: NextRequest) {
     }
 
     const { pathname } = request.nextUrl;
-
     const isAuthPage =
       pathname.startsWith("/login") ||
+      pathname.startsWith("/admin/login") ||
       pathname.startsWith("/register") ||
       pathname.startsWith("/forgot-password") ||
       pathname.startsWith("/reset-password");
     const isPublic =
       isAuthPage ||
+      pathname === "/" ||
       pathname.startsWith("/auth") ||
-      pathname.startsWith("/_next") ||
       pathname.startsWith("/api");
 
     if (!ALLOW_REGISTRATION && pathname.startsWith("/register")) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
     const env = getSupabaseEnv();
@@ -111,39 +117,28 @@ export async function updateSession(request: NextRequest) {
       ),
     ]);
     const user = authResult.data?.user ?? null;
-    if (authResult.error && authResult.error.message !== "Auth timeout") {
-      console.error("[middleware] getUser error:", authResult.error.message);
+
+    if (isAdminProtected(pathname)) {
+      if (!user) return NextResponse.redirect(new URL("/admin/login", request.url));
+      const { data: profile } = await supabase.from("profiles").select("is_super_admin").eq("id", user.id).maybeSingle();
+      if (!profile?.is_super_admin) return NextResponse.redirect(new URL("/dashboard", request.url));
+      return supabaseResponse;
     }
 
-    if (!user && !isPublic && pathname !== "/") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+    if (!user && isClinicProtected(pathname)) {
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    if (user && isAuthPage) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
-
-    if (user && pathname.startsWith("/admin")) {
-      try {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("is_super_admin")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (!profile?.is_super_admin) {
-          const url = request.nextUrl.clone();
-          url.pathname = "/dashboard";
-          return NextResponse.redirect(url);
-        }
-      } catch {
-        const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
-        return NextResponse.redirect(url);
+    if (user && (pathname === "/login" || pathname === "/admin/login")) {
+      const { data: profile } = await supabase.from("profiles").select("is_super_admin").eq("id", user.id).maybeSingle();
+      if (pathname === "/admin/login" && profile?.is_super_admin) {
+        return NextResponse.redirect(new URL("/admin", request.url));
       }
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    if (!user && !isPublic) {
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
     return supabaseResponse;

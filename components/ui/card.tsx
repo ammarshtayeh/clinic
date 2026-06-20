@@ -58,20 +58,21 @@ export function EmptyState({ title, description, action, icon }: {
   );
 }
 
-export function PageHeader({ title, description, action, badge }: {
+export function PageHeader({ title, description, action, badge, dark }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
   badge?: React.ReactNode;
+  dark?: boolean;
 }) {
   return (
     <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">{title}</h1>
+          <h1 className={clsx("text-2xl font-black tracking-tight md:text-3xl", dark ? "text-white" : "text-slate-900")}>{title}</h1>
           {badge}
         </div>
-        {description && <p className="mt-2 text-sm text-slate-500">{description}</p>}
+        {description && <p className={clsx("mt-2 text-sm", dark ? "text-slate-400" : "text-slate-500")}>{description}</p>}
       </div>
       {action}
     </div>

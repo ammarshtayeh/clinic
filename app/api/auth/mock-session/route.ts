@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json({
     ok: true,
     userId: cred.userId,
-    isSuperAdmin: cred.userId === "user-owner-001",
+    role: cred.userId === "user-owner-001" ? "owner" : "doctor",
   });
   response.cookies.set(MOCK_SESSION_COOKIE, cred.userId, COOKIE_OPTS);
   return response;

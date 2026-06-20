@@ -27,7 +27,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-[#f4f7fb]">
       <Sidebar />
       <MobileSidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
       <main className="flex-1 overflow-x-hidden">

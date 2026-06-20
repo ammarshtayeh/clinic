@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, Calendar, Stethoscope, FileText,
   Settings, LogOut, ClipboardList, UserCog, Smile, BarChart3,
-  CalendarDays, Shield, X, Menu,
+  CalendarDays, X, Menu,
 } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
@@ -67,7 +67,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { clinic, membership, isSuperAdmin } = useClinic();
+  const { clinic, membership } = useClinic();
   const supabase = createClient();
   const role = membership?.role;
 
@@ -131,15 +131,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
 
-        {isSuperAdmin && (
-          <div>
-            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-amber-600/80">المنصة</p>
-            <Link href="/admin" onClick={onNavigate} className={clsx("sidebar-link text-amber-400", pathname.startsWith("/admin") && "sidebar-link-active")}>
-              <Shield size={18} />
-              إدارة Asnany
-            </Link>
-          </div>
-        )}
       </nav>
 
       <div className="border-t border-white/10 p-4">

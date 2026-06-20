@@ -36,7 +36,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           <MobileMenuButton onClick={onMenuClick} />
           <div>
             <p className="text-lg font-black text-slate-900">
-              {greeting}{profile?.full_name ? `، ${profile.full_name.split(" ")[0]}` : ""} 👋
+              {greeting}{profile?.full_name ? `، ${profile.full_name.split(" ")[0]}` : ""}
             </p>
             <p className="text-xs text-slate-400">{today}</p>
           </div>

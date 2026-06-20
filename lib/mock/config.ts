@@ -9,8 +9,8 @@ function hasValidSupabaseEnv() {
 export function isMockMode(): boolean {
   if (process.env.NEXT_PUBLIC_MOCK_MODE === "true") return true;
   if (process.env.NEXT_PUBLIC_MOCK_MODE === "false" && hasValidSupabaseEnv()) return false;
-  // Default to mock until Supabase is explicitly configured
   return true;
 }
 
 export const MOCK_SESSION_COOKIE = "ASNANY_MOCK_SESSION";
+export const ADMIN_SESSION_COOKIE = "ASNANY_ADMIN_SESSION";
