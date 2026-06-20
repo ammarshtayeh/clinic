@@ -100,8 +100,13 @@ function createSeedDb() {
   ];
 
   const tooth_records: ToothRecord[] = [
-    { id: "tooth-001", clinic_id: CLINIC_ID, patient_id: "patient-001", tooth_number: 16, condition: "filling", surfaces: null, notes: null, recorded_at: now },
+    { id: "tooth-001", clinic_id: CLINIC_ID, patient_id: "patient-001", tooth_number: 16, condition: "filling", surfaces: "O,M", notes: "حشوة مركبة — 2025", recorded_at: now },
     { id: "tooth-002", clinic_id: CLINIC_ID, patient_id: "patient-001", tooth_number: 26, condition: "healthy", surfaces: null, notes: null, recorded_at: now },
+    { id: "tooth-003", clinic_id: CLINIC_ID, patient_id: "patient-001", tooth_number: 36, condition: "cavity", surfaces: "O,D", notes: "تسوس سطح إطباقي", recorded_at: now },
+    { id: "tooth-004", clinic_id: CLINIC_ID, patient_id: "patient-001", tooth_number: 46, condition: "root_canal", surfaces: null, notes: "علاج عصب — جلسة 2", recorded_at: now },
+    { id: "tooth-005", clinic_id: CLINIC_ID, patient_id: "patient-001", tooth_number: 11, condition: "crown", surfaces: null, notes: "تاج زيركون", recorded_at: now },
+    { id: "tooth-006", clinic_id: CLINIC_ID, patient_id: "patient-002", tooth_number: 26, condition: "root_canal", surfaces: "O", notes: "جلسة أولى", recorded_at: now },
+    { id: "tooth-007", clinic_id: CLINIC_ID, patient_id: "patient-002", tooth_number: 38, condition: "missing", surfaces: null, notes: "مخلوع سابقاً", recorded_at: now },
   ];
 
   return {
