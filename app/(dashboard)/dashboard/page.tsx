@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { canAccess } from "@/lib/permissions";
 
 export default function DashboardPage() {
-  const { clinic, membership, profile } = useClinic();
+  const { clinic, membership, profile, loading: clinicLoading } = useClinic();
   const [stats, setStats] = useState({ patients: 0, todayAppointments: 0, treatments: 0, pendingInvoices: 0, revenue: 0 });
   const [recentAppointments, setRecentAppointments] = useState<Array<{
     id: string; appointment_date: string; start_time: string; status: string;
@@ -23,7 +23,11 @@ export default function DashboardPage() {
   const role = membership?.role;
 
   useEffect(() => {
-    if (!clinic) return;
+    if (clinicLoading) return;
+    if (!clinic) {
+      setLoading(false);
+      return;
+    }
     const today = format(new Date(), "yyyy-MM-dd");
     const monthStart = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
 
@@ -47,7 +51,7 @@ export default function DashboardPage() {
       setRecentAppointments((recent.data ?? []) as unknown as typeof recentAppointments);
       setLoading(false);
     });
-  }, [clinic, supabase]);
+  }, [clinic, clinicLoading, supabase]);
 
   return (
     <div>

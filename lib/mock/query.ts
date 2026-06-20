@@ -30,8 +30,9 @@ function applyJoins(row: Row, joins: ReturnType<typeof parseJoins>["joins"], db:
     let match: Row | undefined;
     if (j.table === "patients") match = related.find((r) => r.id === row.patient_id);
     else if (j.table === "procedures") match = related.find((r) => r.id === row.procedure_id);
-    else if (j.table === "profiles") match = related.find((r) => r.id === row.user_id);
-    else if (j.table === "clinics") match = related.find((r) => r.id === row.clinic_id);
+    else if (j.table === "profiles") {
+      match = related.find((r) => r.id === (row.user_id ?? row.doctor_id));
+    } else if (j.table === "clinics") match = related.find((r) => r.id === row.clinic_id);
     if (match) {
       if (j.fields.length === 1 && j.fields[0] === "*") {
         out[j.alias] = { ...match };
@@ -50,7 +51,7 @@ function applyJoins(row: Row, joins: ReturnType<typeof parseJoins>["joins"], db:
 class MockQuery {
   private table: string;
   private filters: ((r: Row) => boolean)[] = [];
-  private sortFn: ((a: Row, b: Row) => number) | null = null;
+  private sortFns: ((a: Row, b: Row) => number)[] = [];
   private limitN: number | null = null;
   private selectStr = "*";
   private countMode = false;
@@ -107,18 +108,29 @@ class MockQuery {
     return this;
   }
 
-  or(_filter: string) {
+  or(filter: string) {
+    const parts = filter.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length === 0) return this;
+
+    this.filters.push((r) =>
+      parts.some((part) => {
+        const match = part.match(/^(\w+)\.ilike\.%(.+)%$/);
+        if (!match) return false;
+        const [, col, value] = match;
+        return String(r[col] ?? "").toLowerCase().includes(value.toLowerCase());
+      })
+    );
     return this;
   }
 
   order(col: string, opts?: { ascending?: boolean }) {
     const asc = opts?.ascending !== false;
-    this.sortFn = (a, b) => {
+    this.sortFns.push((a, b) => {
       const av = a[col], bv = b[col];
       if (av < bv) return asc ? -1 : 1;
       if (av > bv) return asc ? 1 : -1;
       return 0;
-    };
+    });
     return this;
   }
 
@@ -156,7 +168,15 @@ class MockQuery {
     }
 
     let rows = getTable(db, this.table).filter((r) => this.filters.every((f) => f(r)));
-    if (this.sortFn) rows = [...rows].sort(this.sortFn);
+    if (this.sortFns.length) {
+      rows = [...rows].sort((a, b) => {
+        for (const sortFn of this.sortFns) {
+          const result = sortFn(a, b);
+          if (result !== 0) return result;
+        }
+        return 0;
+      });
+    }
     if (this.limitN) rows = rows.slice(0, this.limitN);
 
     if (this.countMode) {

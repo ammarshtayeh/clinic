@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { Clinic, ClinicMember, Profile } from "@/lib/types/database";
@@ -31,7 +31,7 @@ export function ClinicProvider({ children }: { children: React.ReactNode }) {
   const [clinic, setClinic] = useState<Clinic | null>(null);
   const [membership, setMembership] = useState<ClinicMember | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const refresh = useCallback(async () => {
     const { data: { user: currentUser } } = await supabase.auth.getUser();

@@ -104,9 +104,15 @@ export async function updateSession(request: NextRequest) {
       },
     });
 
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) {
-      console.error("[middleware] getUser error:", error.message);
+    const authResult = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<{ data: { user: null }; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: { user: null }, error: { message: "Auth timeout" } }), 4000)
+      ),
+    ]);
+    const user = authResult.data?.user ?? null;
+    if (authResult.error && authResult.error.message !== "Auth timeout") {
+      console.error("[middleware] getUser error:", authResult.error.message);
     }
 
     if (!user && !isPublic && pathname !== "/") {
