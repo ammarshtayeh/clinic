@@ -1,7 +1,19 @@
 ﻿import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { isMockMode } from "@/lib/mock/config";
-import { Building2, Stethoscope, Shield, ArrowLeft, Sparkles } from "lucide-react";
+import {
+  Stethoscope, Shield, ArrowLeft, Sparkles, Users, CalendarCheck,
+  Smile, Pill, FileText, BarChart3, ShieldCheck, Zap, Clock,
+} from "lucide-react";
+
+const FEATURES = [
+  { icon: Users, title: "ملفات المرضى", desc: "أرشيف طبي كامل، حساسيات، وتاريخ علاجي" },
+  { icon: CalendarCheck, title: "المواعيد والتقويم", desc: "جدولة ذكية مع تذكير وحالات المواعيد" },
+  { icon: Smile, title: "المخطط السني FDI", desc: "مخطط أسنان احترافي بترقيم عالمي" },
+  { icon: Pill, title: "الوصفات الطبية", desc: "إصدار وطباعة الوصفات بضغطة زر" },
+  { icon: FileText, title: "الفواتير والمدفوعات", desc: "فوترة دقيقة وتتبع المستحقات" },
+  { icon: BarChart3, title: "تقارير وتحليلات", desc: "لوحات أداء ورؤى مالية فورية" },
+];
 
 export default function HomePage() {
   return (
@@ -91,6 +103,43 @@ export default function HomePage() {
               </span>
             </div>
           </Link>
+        </div>
+
+        <div className="mt-20">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-black text-white md:text-3xl">كل ما تحتاجه عيادتك في مكان واحد</h2>
+            <p className="mt-2 text-sm text-slate-400">منصة متكاملة صُممت خصيصاً لعيادات الأسنان</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="group rounded-3xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-cyan-400/30 hover:bg-white/[0.04]"
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400 transition group-hover:scale-110">
+                  <Icon size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-white">{title}</h3>
+                <p className="mt-1 text-sm text-slate-400">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-16 grid gap-4 rounded-3xl border border-white/[0.06] bg-white/[0.02] p-8 sm:grid-cols-3">
+          {[
+            { icon: ShieldCheck, title: "آمن وموثوق", desc: "صلاحيات دقيقة لكل دور وحماية للبيانات" },
+            { icon: Zap, title: "سريع وسلس", desc: "واجهة عربية حديثة تعمل على كل الأجهزة" },
+            { icon: Clock, title: "يوفّر وقتك", desc: "أتمتة المهام اليومية وتقليل الأخطاء" },
+          ].map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400"><Icon size={20} /></span>
+              <div>
+                <p className="font-bold text-white">{title}</p>
+                <p className="text-xs text-slate-400">{desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
         <p className="mt-12 text-center text-xs text-slate-600">

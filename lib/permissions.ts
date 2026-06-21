@@ -7,6 +7,7 @@ export type Permission =
   | "calendar"
   | "treatments"
   | "procedures"
+  | "prescriptions"
   | "invoices"
   | "dental_chart"
   | "reports"
@@ -15,8 +16,8 @@ export type Permission =
   | "admin";
 
 const ROLE_PERMISSIONS: Record<MemberRole, Permission[]> = {
-  owner: ["dashboard", "patients", "appointments", "calendar", "treatments", "procedures", "invoices", "dental_chart", "reports", "team", "settings"],
-  doctor: ["dashboard", "patients", "appointments", "calendar", "treatments", "procedures", "dental_chart", "reports"],
+  owner: ["dashboard", "patients", "appointments", "calendar", "treatments", "procedures", "prescriptions", "invoices", "dental_chart", "reports", "team", "settings"],
+  doctor: ["dashboard", "patients", "appointments", "calendar", "treatments", "procedures", "prescriptions", "dental_chart", "reports"],
   receptionist: ["dashboard", "patients", "appointments", "calendar"],
   accountant: ["dashboard", "patients", "invoices", "reports"],
 };

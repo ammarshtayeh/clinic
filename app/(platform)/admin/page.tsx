@@ -1,102 +1,233 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { PageHeader, Card } from "@/components/ui/card";
+import { useMemo } from "react";
+import Link from "next/link";
+import { PageHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/status-badge";
 import { TableSkeleton } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/lib/toast-store";
-import type { Clinic } from "@/lib/types/database";
-import { Building2, Power, PowerOff, TrendingUp, Globe } from "lucide-react";
+import { Donut, MiniBars, Sparkline, TrendBadge } from "@/components/ui/charts";
+import { AdminCard, AdminKpi, PlanPill } from "@/components/layout/admin-ui";
+import { useClinics } from "@/lib/admin/use-clinics";
+import {
+  computeMetrics, planDistribution, revenueByPlan, STATUS_STYLES, daysUntil, fmtMoney, fmtDate,
+} from "@/lib/admin/metrics";
+import { PLANS, SUBSCRIPTION_STATUS_LABELS } from "@/lib/types/database";
 import { BRAND } from "@/lib/brand";
+import {
+  Building2, Wallet, Users, CalendarCheck, AlertTriangle, Clock, ArrowLeft, TrendingUp,
+} from "lucide-react";
+
+const MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
 
 export default function AdminDashboardPage() {
-  const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const { clinics, loading } = useClinics();
 
-  const load = async () => {
-    const { data } = await supabase.from("clinics").select("*").order("created_at", { ascending: false });
-    setClinics(data ?? []);
-    setLoading(false);
-  };
+  const m = useMemo(() => computeMetrics(clinics), [clinics]);
+  const plans = useMemo(() => planDistribution(clinics), [clinics]);
+  const revPlan = useMemo(() => revenueByPlan(clinics), [clinics]);
 
-  useEffect(() => { load(); }, []);
+  const signups = useMemo(() => {
+    const now = new Date();
+    const buckets: { label: string; value: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const count = clinics.filter((c) => {
+        const t = new Date(c.created_at);
+        return t >= d && t < next;
+      }).length;
+      buckets.push({ label: MONTHS[d.getMonth()].slice(0, 3), value: count });
+    }
+    return buckets;
+  }, [clinics]);
 
-  const toggleActive = async (clinic: Clinic) => {
-    await supabase.from("clinics").update({ is_active: !clinic.is_active }).eq("id", clinic.id);
-    toast.success(clinic.is_active ? "تم إيقاف العيادة" : "تم تفعيل العيادة");
-    load();
-  };
+  const revenueTrend = useMemo(() => {
+    let base = Math.max(400, m.mrr * 0.55);
+    return Array.from({ length: 8 }, () => {
+      base *= 1 + (0.06 + Math.random() * 0.05);
+      return Math.round(base);
+    }).concat(m.mrr);
+  }, [m.mrr]);
 
-  const active = clinics.filter((c) => c.is_active).length;
+  const attention = useMemo(() => {
+    const list: { clinic: typeof clinics[number]; reason: string; tone: string }[] = [];
+    clinics.forEach((c) => {
+      if (c.subscription_status === "past_due") list.push({ clinic: c, reason: "دفعة متأخرة", tone: "text-amber-400" });
+      else if (c.subscription_status === "suspended") list.push({ clinic: c, reason: "اشتراك موقوف", tone: "text-rose-400" });
+      else if (c.subscription_status === "trialing") {
+        const d = daysUntil(c.trial_ends_at);
+        if (d !== null) list.push({ clinic: c, reason: `تنتهي التجربة خلال ${d} يوم`, tone: "text-cyan-400" });
+      }
+    });
+    return list;
+  }, [clinics]);
+
+  const topClinics = useMemo(
+    () => [...clinics].sort((a, b) => b.monthly_fee - a.monthly_fee).slice(0, 5),
+    [clinics]
+  );
 
   return (
     <div>
       <PageHeader
         title="لوحة المنصة"
-        description={`${BRAND.name} — ${BRAND.domain}`}
+        description={`${BRAND.name} — نظرة شاملة على أداء المنصة والاشتراكات`}
         badge={<Badge variant="gold">Super Admin</Badge>}
         dark
       />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "إجمالي العيادات", value: clinics.length, icon: Building2, color: "text-amber-400" },
-          { label: "عيادات نشطة", value: active, icon: Power, color: "text-emerald-400" },
-          { label: "موقوفة", value: clinics.length - active, icon: PowerOff, color: "text-rose-400" },
-          { label: "النمو", value: "+12%", icon: TrendingUp, color: "text-cyan-400" },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-3xl border border-white/5 bg-white/[0.03] p-5 backdrop-blur">
-            <Icon size={22} className={`mb-3 ${color}`} />
-            <p className="text-3xl font-black text-white">{value}</p>
-            <p className="text-sm text-slate-500">{label}</p>
-          </div>
-        ))}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <AdminKpi
+          label="إجمالي العيادات"
+          value={m.total}
+          icon={Building2}
+          color="#f59e0b"
+          hint={`${m.active} نشطة · ${m.trialing} تجريبي`}
+          trend={<TrendBadge value={12} />}
+        />
+        <AdminKpi
+          label="الإيراد الشهري (MRR)"
+          value={fmtMoney(m.mrr)}
+          icon={Wallet}
+          color="#10b981"
+          hint={`سنوياً ${fmtMoney(m.arr)}`}
+          trend={<TrendBadge value={8} />}
+        />
+        <AdminKpi
+          label="إجمالي المرضى"
+          value={m.totalPatients.toLocaleString("en-US")}
+          icon={Users}
+          color="#06b6d4"
+          hint={`${m.totalStaff} موظف عبر المنصة`}
+        />
+        <AdminKpi
+          label="مواعيد (30 يوم)"
+          value={m.appointments30d.toLocaleString("en-US")}
+          icon={CalendarCheck}
+          color="#8b5cf6"
+          hint={`متوسط ${fmtMoney(m.avgRevenuePerClinic)} / عيادة`}
+        />
       </div>
 
-      <Card title="جميع العيادات المشتركة" dark className="!border-white/5">
-        {loading ? <TableSkeleton /> : clinics.length === 0 ? (
-          <p className="py-12 text-center text-slate-500">لا توجد عيادات بعد</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/5">
-                  <th className="px-4 py-3 text-right font-bold text-slate-400">العيادة</th>
-                  <th className="px-4 py-3 text-right font-bold text-slate-400">البريد</th>
-                  <th className="px-4 py-3 text-right font-bold text-slate-400">المدينة</th>
-                  <th className="px-4 py-3 text-right font-bold text-slate-400">الحالة</th>
-                  <th className="px-4 py-3 text-right font-bold text-slate-400">إجراء</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clinics.map((c) => (
-                  <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Globe size={14} className="text-amber-500/50" />
-                        <span className="font-bold text-white">{c.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-400" dir="ltr">{c.email ?? "—"}</td>
-                    <td className="px-4 py-3 text-slate-400">{c.city ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={c.is_active ? "cyan" : "default"}>{c.is_active ? "نشطة" : "موقوفة"}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Button size="sm" variant={c.is_active ? "danger" : "primary"} onClick={() => toggleActive(c)}>
-                        {c.is_active ? "إيقاف" : "تفعيل"}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="mb-6 grid gap-4 lg:grid-cols-3">
+        <AdminCard title="نمو الإيراد الشهري" subtitle="آخر 9 أشهر" icon={TrendingUp} className="lg:col-span-2">
+          <div className="mb-4 flex items-end gap-3">
+            <p className="text-3xl font-black text-white">{fmtMoney(m.mrr)}</p>
+            <TrendBadge value={8} />
           </div>
-        )}
-      </Card>
+          <Sparkline data={revenueTrend} color="#10b981" height={70} />
+          <div className="mt-5 border-t border-white/5 pt-4">
+            <p className="mb-3 text-xs font-bold text-slate-500">عيادات جديدة شهرياً</p>
+            <MiniBars data={signups} color="#f59e0b" height={110} dark />
+          </div>
+        </AdminCard>
+
+        <AdminCard title="توزيع الباقات" subtitle="حسب عدد العيادات">
+          <Donut
+            segments={plans.filter((p) => p.value > 0)}
+            centerValue={m.total}
+            centerLabel="عيادة"
+            dark
+          />
+          <div className="mt-5 border-t border-white/5 pt-4">
+            <p className="mb-3 text-xs font-bold text-slate-500">الإيراد حسب الباقة</p>
+            <div className="space-y-2">
+              {revPlan.map((r) => (
+                <div key={r.label} className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-slate-300">
+                    <span className="h-2 w-2 rounded-full" style={{ background: r.color }} />
+                    {r.label}
+                  </span>
+                  <span className="font-bold text-white">{fmtMoney(r.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </AdminCard>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <AdminCard
+          title="تحتاج إلى انتباه"
+          subtitle={`${attention.length} عيادة`}
+          icon={AlertTriangle}
+          action={<Link href="/admin/clinics" className="text-xs font-bold text-amber-400 hover:underline">الكل ←</Link>}
+        >
+          {loading ? <TableSkeleton rows={3} /> : attention.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-500">كل العيادات على ما يرام</p>
+          ) : (
+            <div className="space-y-2">
+              {attention.map(({ clinic, reason, tone }) => (
+                <Link
+                  key={clinic.id}
+                  href="/admin/clinics"
+                  className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition hover:bg-white/[0.05]"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-white">{clinic.name}</p>
+                    <p className="text-xs text-slate-500">{clinic.city}</p>
+                  </div>
+                  <span className={`flex items-center gap-1 text-xs font-semibold ${tone}`}>
+                    <Clock size={12} />
+                    {reason}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </AdminCard>
+
+        <AdminCard
+          title="أعلى العيادات إيراداً"
+          icon={Building2}
+          className="lg:col-span-2"
+          action={<Link href="/admin/clinics" className="text-xs font-bold text-amber-400 hover:underline">إدارة العيادات ←</Link>}
+        >
+          {loading ? <TableSkeleton rows={5} /> : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/5 text-right text-xs text-slate-500">
+                    <th className="px-3 py-2 font-semibold">العيادة</th>
+                    <th className="px-3 py-2 font-semibold">الباقة</th>
+                    <th className="px-3 py-2 font-semibold">المرضى</th>
+                    <th className="px-3 py-2 font-semibold">الحالة</th>
+                    <th className="px-3 py-2 font-semibold">الإيراد</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topClinics.map((c) => (
+                    <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <td className="px-3 py-3">
+                        <p className="font-bold text-white">{c.name}</p>
+                        <p className="text-xs text-slate-500">{c.city}</p>
+                      </td>
+                      <td className="px-3 py-3"><PlanPill label={PLANS[c.plan].label} color={PLANS[c.plan].color} /></td>
+                      <td className="px-3 py-3 text-slate-400">{c.patients_count}</td>
+                      <td className="px-3 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLES[c.subscription_status]}`}>
+                          {SUBSCRIPTION_STATUS_LABELS[c.subscription_status]}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 font-bold text-emerald-400">{fmtMoney(c.monthly_fee)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <Link
+            href="/admin/subscriptions"
+            className="mt-4 flex items-center justify-center gap-2 rounded-2xl border border-white/5 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/5"
+          >
+            عرض تفاصيل الفوترة <ArrowLeft size={16} />
+          </Link>
+        </AdminCard>
+      </div>
+
+      <p className="mt-6 text-xs text-slate-600">
+        آخر تحديث {fmtDate(new Date().toISOString())} · بيانات تجريبية حتى ربط قاعدة البيانات
+      </p>
     </div>
   );
 }

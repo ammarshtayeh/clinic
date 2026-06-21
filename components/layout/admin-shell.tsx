@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, LayoutDashboard, LogOut, Shield, X } from "lucide-react";
+import { Building2, CreditCard, LayoutDashboard, LogOut, Activity, Shield, X } from "lucide-react";
 import clsx from "clsx";
 import { BRAND } from "@/lib/brand";
 import { MockBanner } from "@/components/ui/mock-banner";
@@ -11,6 +11,8 @@ import { MockBanner } from "@/components/ui/mock-banner";
 const navItems = [
   { href: "/admin", label: "لوحة المنصة", icon: LayoutDashboard },
   { href: "/admin/clinics", label: "العيادات", icon: Building2 },
+  { href: "/admin/subscriptions", label: "الاشتراكات والفوترة", icon: CreditCard },
+  { href: "/admin/activity", label: "سجل النشاط", icon: Activity },
 ];
 
 function AdminSidebarContent({ onNavigate }: { onNavigate?: () => void }) {

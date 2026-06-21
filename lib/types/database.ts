@@ -4,6 +4,8 @@ export type TreatmentStatus = "planned" | "in_progress" | "completed" | "cancell
 export type InvoiceStatus = "draft" | "issued" | "paid" | "partial" | "void";
 export type PaymentMethod = "cash" | "card" | "transfer" | "insurance" | "other";
 export type ToothCondition = "healthy" | "cavity" | "filling" | "crown" | "root_canal" | "extraction" | "implant" | "missing" | "other";
+export type PlanTier = "trial" | "basic" | "pro" | "enterprise";
+export type SubscriptionStatus = "active" | "trialing" | "past_due" | "suspended" | "cancelled";
 
 export interface Profile {
   id: string;
@@ -22,9 +24,19 @@ export interface Clinic {
   address: string | null;
   city: string | null;
   owner_id: string;
+  owner_name?: string | null;
   is_active: boolean;
   logo_url: string | null;
   created_at: string;
+  plan: PlanTier;
+  subscription_status: SubscriptionStatus;
+  monthly_fee: number;
+  next_billing_date: string | null;
+  trial_ends_at: string | null;
+  patients_count: number;
+  staff_count: number;
+  appointments_30d: number;
+  last_active_at: string | null;
 }
 
 export interface ClinicMember {
@@ -140,6 +152,26 @@ export interface ToothRecord {
   recorded_at: string;
 }
 
+export interface Prescription {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  doctor_id: string | null;
+  diagnosis: string | null;
+  notes: string | null;
+  items: PrescriptionItem[];
+  issued_at: string;
+  patient?: Patient;
+  doctor?: Profile;
+}
+
+export interface PrescriptionItem {
+  drug: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+}
+
 export interface AuditLog {
   id: string;
   clinic_id: string;
@@ -165,6 +197,7 @@ export interface Database {
       invoice_items: { Row: InvoiceItem; Insert: Record<string, unknown>; Update: Record<string, unknown> };
       payments: { Row: Payment; Insert: Record<string, unknown>; Update: Record<string, unknown> };
       tooth_records: { Row: ToothRecord; Insert: Record<string, unknown>; Update: Record<string, unknown> };
+      prescriptions: { Row: Prescription; Insert: Record<string, unknown>; Update: Record<string, unknown> };
       audit_logs: { Row: AuditLog; Insert: Record<string, unknown>; Update: Record<string, unknown> };
     };
     Functions: {
@@ -222,4 +255,46 @@ export const TOOTH_CONDITION_COLORS: Record<ToothCondition, string> = {
   implant: "#06b6d4",
   missing: "#d1d5db",
   other: "#eab308",
+};
+
+export interface PlanConfig {
+  label: string;
+  price: number;
+  color: string;
+  features: string[];
+}
+
+export const PLANS: Record<PlanTier, PlanConfig> = {
+  trial: {
+    label: "تجريبي",
+    price: 0,
+    color: "#64748b",
+    features: ["14 يوم مجاناً", "حتى 50 مريض", "طبيب واحد"],
+  },
+  basic: {
+    label: "أساسي",
+    price: 199,
+    color: "#06b6d4",
+    features: ["مرضى غير محدود", "حتى 3 موظفين", "فواتير ومواعيد", "مخطط سني"],
+  },
+  pro: {
+    label: "احترافي",
+    price: 399,
+    color: "#8b5cf6",
+    features: ["كل مزايا الأساسي", "حتى 10 موظفين", "تقارير متقدمة", "وصفات ومخبر", "نسخ احتياطي يومي"],
+  },
+  enterprise: {
+    label: "مؤسسي",
+    price: 799,
+    color: "#f59e0b",
+    features: ["فروع متعددة", "موظفين غير محدود", "API ودعم مخصص", "تدريب الفريق", "مدير حساب"],
+  },
+};
+
+export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
+  active: "نشط",
+  trialing: "تجريبي",
+  past_due: "متأخر السداد",
+  suspended: "موقوف",
+  cancelled: "ملغي",
 };

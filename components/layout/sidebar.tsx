@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, Calendar, Stethoscope, FileText,
   Settings, LogOut, ClipboardList, UserCog, Smile, BarChart3,
-  CalendarDays, X, Menu,
+  CalendarDays, Pill, X, Menu,
 } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
@@ -45,6 +45,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
     title: "العلاج",
     items: [
       { href: "/treatments", label: "العلاجات", icon: Stethoscope, permission: "treatments" },
+      { href: "/prescriptions", label: "الوصفات الطبية", icon: Pill, permission: "prescriptions" },
       { href: "/procedures", label: "الإجراءات", icon: ClipboardList, permission: "procedures" },
     ],
   },
