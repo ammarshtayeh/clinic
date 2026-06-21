@@ -10,7 +10,7 @@ import { useClinics } from "@/lib/admin/use-clinics";
 import { computeMetrics, STATUS_STYLES, fmtMoney, fmtDate } from "@/lib/admin/metrics";
 import { PLANS, SUBSCRIPTION_STATUS_LABELS } from "@/lib/types/database";
 import type { PlanTier } from "@/lib/types/database";
-import { Wallet, TrendingUp, AlertCircle, RefreshCw } from "lucide-react";
+import { Wallet, TrendingUp, AlertCircle, Users } from "lucide-react";
 
 export default function SubscriptionsPage() {
   const { clinics, loading } = useClinics();
@@ -49,7 +49,7 @@ export default function SubscriptionsPage() {
         <AdminKpi label="الإيراد الشهري" value={fmtMoney(m.mrr)} icon={Wallet} color="#10b981" trend={<TrendBadge value={8} />} />
         <AdminKpi label="الإيراد السنوي" value={fmtMoney(m.arr)} icon={TrendingUp} color="#06b6d4" hint="MRR × 12" />
         <AdminKpi label="متأخرة السداد" value={pastDue.length} icon={AlertCircle} color="#f59e0b" hint={fmtMoney(pastDue.reduce((s, c) => s + c.monthly_fee, 0))} />
-        <AdminKpi label="متوسط الإيراد/عيادة" value={fmtMoney(m.avgRevenuePerClinic)} icon={RefreshCw} color="#8b5cf6" />
+        <AdminKpi label="المقاعد المباعة" value={m.seatsSold} icon={Users} color="#8b5cf6" hint={`${m.seatsUsed} مستخدم نشط`} />
       </div>
 
       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">

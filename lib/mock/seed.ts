@@ -8,6 +8,31 @@ import { PLANS } from "@/lib/types/database";
 export const CLINIC_ID = "clinic-demo-001";
 export const OWNER_ID = "user-owner-001";
 export const DOCTOR_ID = "user-doctor-001";
+/** Platform system manager — NOT tied to any clinic. Sells subscriptions/seats to clinics. */
+export const ADMIN_ID = "user-admin-001";
+
+export interface Credential {
+  email: string;
+  password: string;
+  userId: string;
+}
+
+/** Clinic-portal accounts (owners, doctors, staff). */
+export const MOCK_CREDENTIALS: Credential[] = [
+  { email: "owner@asnany.ps", password: "ammarking123", userId: OWNER_ID },
+  { email: "ammar.ammar@gmail.com", password: "ammarking123", userId: DOCTOR_ID },
+];
+
+/** Platform-admin accounts (system managers). Separate from any clinic. */
+export const ADMIN_CREDENTIALS: Credential[] = [
+  { email: "ammar.shtayeh@gmail.com", password: "ammarking123", userId: ADMIN_ID },
+];
+
+export const ADMIN_IDS = ADMIN_CREDENTIALS.map((c) => c.userId);
+
+export function isAdminUser(userId: string | null | undefined): boolean {
+  return !!userId && ADMIN_IDS.includes(userId);
+}
 
 function daysFromNow(days: number) {
   const d = new Date();
@@ -15,22 +40,25 @@ function daysFromNow(days: number) {
   return d.toISOString();
 }
 
-export const MOCK_CREDENTIALS = [
-  { email: "ammar.shtayeh@gmail.com", password: "ammarking123", userId: OWNER_ID },
-  { email: "ammar.ammar@gmail.com", password: "ammarking123", userId: DOCTOR_ID },
-] as const;
-
 const now = new Date().toISOString();
 const today = new Date().toISOString().slice(0, 10);
 
 function createSeedDb() {
   const profiles: Profile[] = [
     {
-      id: OWNER_ID,
-      full_name: "د. عمار شتية",
-      phone: "0599123456",
+      id: ADMIN_ID,
+      full_name: "عمار شتية — مدير النظام",
+      phone: "0599000000",
       avatar_url: null,
       is_super_admin: true,
+      created_at: now,
+    },
+    {
+      id: OWNER_ID,
+      full_name: "د. مالك العيادة",
+      phone: "0599123456",
+      avatar_url: null,
+      is_super_admin: false,
       created_at: now,
     },
     {
@@ -76,10 +104,12 @@ function createSeedDb() {
     staff_count,
     appointments_30d,
     last_active_at: daysFromNow(-lastActiveDaysAgo),
+    seats_total: PLANS[plan].seats,
+    seats_used: Math.min(staff_count, PLANS[plan].seats),
   });
 
   const clinics: Clinic[] = [
-    mkClinic(CLINIC_ID, "عيادة Asnany Demo", "رام الله", "د. عمار شتية", "pro", "active", 220, 4, 4, 86, 0),
+    mkClinic(CLINIC_ID, "عيادة Asnany Demo", "رام الله", "د. مالك العيادة", "pro", "active", 220, 4, 4, 86, 0),
     mkClinic("clinic-002", "مركز الابتسامة لطب الأسنان", "نابلس", "د. ريم حدّاد", "enterprise", "active", 540, 12, 9, 240, 0),
     mkClinic("clinic-003", "عيادة الدكتور سامي للأسنان", "الخليل", "د. سامي قواسمة", "basic", "active", 95, 2, 2, 41, 1),
     mkClinic("clinic-004", "بيرفكت دينتال كلينك", "بيت لحم", "د. لينا عيسى", "pro", "past_due", 310, 6, 5, 120, 3),
@@ -171,13 +201,14 @@ function createSeedDb() {
     profiles, clinics, clinic_members, patients, procedures,
     appointments, treatments, invoices, invoice_items, payments,
     tooth_records, prescriptions, audit_logs: [] as Record<string, unknown>[],
+    credentials: [] as Credential[],
     sessionUserId: null as string | null,
   };
 }
 
 export type MockDb = ReturnType<typeof createSeedDb>;
 
-const STORAGE_KEY = "asnany_mock_db_v2";
+const STORAGE_KEY = "asnany_mock_db_v3";
 
 export function loadDb(): MockDb {
   if (typeof window === "undefined") return createSeedDb();
@@ -207,4 +238,20 @@ export function resetDb() {
 
 export function uid(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** Find a clinic credential among static seed + dynamically provisioned (DB) accounts. */
+export function findClinicCredential(email: string, password: string): Credential | null {
+  const stat = MOCK_CREDENTIALS.find((c) => c.email === email && c.password === password);
+  if (stat) return stat;
+  const db = loadDb();
+  return db.credentials.find((c) => c.email === email && c.password === password) ?? null;
+}
+
+export function findCredentialByUserId(userId: string): Credential | null {
+  const all = [...MOCK_CREDENTIALS, ...ADMIN_CREDENTIALS];
+  const stat = all.find((c) => c.userId === userId);
+  if (stat) return stat;
+  const db = loadDb();
+  return db.credentials.find((c) => c.userId === userId) ?? null;
 }

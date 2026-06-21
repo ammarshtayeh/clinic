@@ -1,5 +1,5 @@
 import { MOCK_SESSION_COOKIE } from "./config";
-import { MOCK_CREDENTIALS, loadDb, saveDb } from "./seed";
+import { loadDb, saveDb, findClinicCredential, findCredentialByUserId } from "./seed";
 import { mockFrom, mockRpc } from "./query";
 
 type AuthListener = (event: string, session: unknown) => void;
@@ -26,7 +26,7 @@ function mockUser(userId: string) {
   const profile = db.profiles.find((p) => p.id === userId);
   return {
     id: userId,
-    email: MOCK_CREDENTIALS.find((c) => c.userId === userId)?.email ?? "demo@asnany.ps",
+    email: findCredentialByUserId(userId)?.email ?? "demo@asnany.ps",
     user_metadata: { full_name: profile?.full_name ?? "مستخدم" },
     app_metadata: {},
     aud: "authenticated",
@@ -45,18 +45,21 @@ export function createMockClient() {
         return { data: { user: mockUser(userId) as any }, error: null };
       },
       async signInWithPassword({ email, password }: { email: string; password: string }) {
-        const cred = MOCK_CREDENTIALS.find((c) => c.email === email && c.password === password);
+        const cred = findClinicCredential(email, password);
         if (!cred) return { data: { user: null, session: null }, error: { message: "Invalid credentials" } };
 
+        // Set the session cookie client-side first so it is present for the
+        // next navigation (works for both seeded and admin-provisioned accounts).
+        setSessionCookie(cred.userId);
+        // Best-effort server cookie for seeded accounts (ignore failures).
         try {
-          const res = await fetch("/api/auth/mock-session", {
+          await fetch("/api/auth/mock-session", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password }),
           });
-          if (!res.ok) return { data: { user: null, session: null }, error: { message: "Invalid credentials" } };
         } catch {
-          setSessionCookie(cred.userId);
+          /* ignore — client cookie already set */
         }
 
         const db = loadDb();

@@ -79,9 +79,9 @@ export function AdminLoginForm() {
           <p className="mt-4 max-w-md text-slate-400">{BRAND.adminPortal.subtitle}</p>
           <div className="mt-10 space-y-3">
             {[
-              { icon: Building2, label: "إدارة العيادات المشتركة" },
-              { icon: BarChart3, label: "مراقبة الاشتراكات" },
-              { icon: Lock, label: "صلاحيات Super Admin" },
+              { icon: Building2, label: "إنشاء العيادات وبيع الحسابات" },
+              { icon: BarChart3, label: "إدارة الاشتراكات والمقاعد" },
+              { icon: Lock, label: "مدير نظام مستقل · غير مرتبط بعيادة" },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-3 rounded-2xl border border-amber-500/10 bg-amber-500/5 px-4 py-3">
                 <Icon size={18} className="text-amber-400" />

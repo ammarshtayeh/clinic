@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isMockMode, MOCK_SESSION_COOKIE } from "@/lib/mock/config";
-import { MOCK_CREDENTIALS } from "@/lib/mock/seed";
+import { MOCK_CREDENTIALS, OWNER_ID } from "@/lib/mock/seed";
 
 const COOKIE_OPTS = {
   path: "/",
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const response = NextResponse.json({
     ok: true,
     userId: cred.userId,
-    role: cred.userId === "user-owner-001" ? "owner" : "doctor",
+    role: cred.userId === OWNER_ID ? "owner" : "doctor",
   });
   response.cookies.set(MOCK_SESSION_COOKIE, cred.userId, COOKIE_OPTS);
   return response;
@@ -50,6 +50,6 @@ export async function GET(request: NextRequest) {
   const cred = userId ? MOCK_CREDENTIALS.find((c) => c.userId === userId) : null;
   if (!cred) return NextResponse.json({ user: null });
   return NextResponse.json({
-    user: { id: cred.userId, email: cred.email, isSuperAdmin: cred.userId === "user-owner-001" },
+    user: { id: cred.userId, email: cred.email, isSuperAdmin: false },
   });
 }

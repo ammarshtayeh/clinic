@@ -37,6 +37,8 @@ export interface Clinic {
   staff_count: number;
   appointments_30d: number;
   last_active_at: string | null;
+  seats_total: number;
+  seats_used: number;
 }
 
 export interface ClinicMember {
@@ -261,6 +263,7 @@ export interface PlanConfig {
   label: string;
   price: number;
   color: string;
+  seats: number;
   features: string[];
 }
 
@@ -269,27 +272,33 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     label: "تجريبي",
     price: 0,
     color: "#64748b",
-    features: ["14 يوم مجاناً", "حتى 50 مريض", "طبيب واحد"],
+    seats: 1,
+    features: ["14 يوم مجاناً", "حتى 50 مريض", "حساب مستخدم واحد"],
   },
   basic: {
     label: "أساسي",
     price: 199,
     color: "#06b6d4",
-    features: ["مرضى غير محدود", "حتى 3 موظفين", "فواتير ومواعيد", "مخطط سني"],
+    seats: 3,
+    features: ["مرضى غير محدود", "3 حسابات مستخدمين", "فواتير ومواعيد", "مخطط سني"],
   },
   pro: {
     label: "احترافي",
     price: 399,
     color: "#8b5cf6",
-    features: ["كل مزايا الأساسي", "حتى 10 موظفين", "تقارير متقدمة", "وصفات ومخبر", "نسخ احتياطي يومي"],
+    seats: 10,
+    features: ["كل مزايا الأساسي", "10 حسابات مستخدمين", "تقارير متقدمة", "وصفات ومخبر", "نسخ احتياطي يومي"],
   },
   enterprise: {
     label: "مؤسسي",
     price: 799,
     color: "#f59e0b",
-    features: ["فروع متعددة", "موظفين غير محدود", "API ودعم مخصص", "تدريب الفريق", "مدير حساب"],
+    seats: 25,
+    features: ["فروع متعددة", "25 حساب مستخدم", "API ودعم مخصص", "تدريب الفريق", "مدير حساب"],
   },
 };
+
+export const SEAT_PRICE = 49;
 
 export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
   active: "نشط",

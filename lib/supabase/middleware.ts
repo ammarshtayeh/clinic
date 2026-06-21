@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   isMockMode, MOCK_SESSION_COOKIE, ADMIN_SESSION_COOKIE,
 } from "@/lib/mock/config";
-import { MOCK_CREDENTIALS, OWNER_ID } from "@/lib/mock/seed";
+import { isAdminUser } from "@/lib/mock/seed";
 import {
   isAdminProtected, isClinicProtected, isPublicPath,
 } from "@/lib/auth/portals";
@@ -23,8 +23,9 @@ function handleMockSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const clinicUserId = request.cookies.get(MOCK_SESSION_COOKIE)?.value;
   const adminUserId = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-  const hasClinicSession = !!clinicUserId && MOCK_CREDENTIALS.some((c) => c.userId === clinicUserId);
-  const hasAdminSession = adminUserId === OWNER_ID;
+  // Clinic sessions are presence-based so admin-provisioned clinic accounts work too.
+  const hasClinicSession = !!clinicUserId && !isAdminUser(clinicUserId);
+  const hasAdminSession = isAdminUser(adminUserId);
 
   if (!ALLOW_REGISTRATION && pathname.startsWith("/register")) {
     return NextResponse.redirect(new URL("/login", request.url));

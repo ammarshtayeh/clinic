@@ -34,7 +34,7 @@ function AdminSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <div>
             <p className="text-sm font-black text-white">{BRAND.name}</p>
-            <p className="text-[10px] font-semibold text-amber-400/80">Platform Admin</p>
+            <p className="text-[10px] font-semibold text-amber-400/80">مدير النظام · Platform</p>
           </div>
         </div>
       </div>

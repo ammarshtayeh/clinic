@@ -17,6 +17,7 @@ export const CLINIC_PROTECTED_PREFIXES = [
   "/appointments",
   "/treatments",
   "/procedures",
+  "/prescriptions",
   "/invoices",
   "/dental-chart",
   "/reports",
@@ -40,5 +41,3 @@ export function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith("/api")) return true;
   return false;
 }
-
-export const OWNER_ID = "user-owner-001";

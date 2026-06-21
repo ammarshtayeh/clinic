@@ -94,11 +94,11 @@ export default function AdminDashboardPage() {
           trend={<TrendBadge value={8} />}
         />
         <AdminKpi
-          label="إجمالي المرضى"
-          value={m.totalPatients.toLocaleString("en-US")}
+          label="المقاعد المباعة"
+          value={m.seatsSold.toLocaleString("en-US")}
           icon={Users}
           color="#06b6d4"
-          hint={`${m.totalStaff} موظف عبر المنصة`}
+          hint={`${m.seatsUsed} مستخدم نشط · ${m.totalPatients.toLocaleString("en-US")} مريض`}
         />
         <AdminKpi
           label="مواعيد (30 يوم)"

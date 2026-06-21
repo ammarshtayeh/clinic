@@ -13,6 +13,8 @@ export interface PlatformMetrics {
   totalStaff: number;
   appointments30d: number;
   avgRevenuePerClinic: number;
+  seatsSold: number;
+  seatsUsed: number;
 }
 
 export function computeMetrics(clinics: Clinic[]): PlatformMetrics {
@@ -31,6 +33,8 @@ export function computeMetrics(clinics: Clinic[]): PlatformMetrics {
     totalStaff: clinics.reduce((s, c) => s + (c.staff_count || 0), 0),
     appointments30d: clinics.reduce((s, c) => s + (c.appointments_30d || 0), 0),
     avgRevenuePerClinic: billing.length ? Math.round(mrr / billing.length) : 0,
+    seatsSold: clinics.reduce((s, c) => s + (c.seats_total || 0), 0),
+    seatsUsed: clinics.reduce((s, c) => s + (c.seats_used || 0), 0),
   };
 }
 
